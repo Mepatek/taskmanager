@@ -6,7 +6,7 @@
 	"authors": [
 		{
 			"name": "Josef Dohnal",
-		},
+		}
 	],
 	"require": {
 		"php": ">=5.5.1",
