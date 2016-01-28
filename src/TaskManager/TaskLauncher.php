@@ -4,7 +4,7 @@ namespace Mepatek\TaskManager;
 
 
 
-class TaskManager
+class TaskLauncher
 {
 	public function run()
 	{
