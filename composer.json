@@ -5,14 +5,14 @@
 	"license": ["BSD-3-Clause", "GPL-2.0", "GPL-3.0"],
 	"authors": [
 		{
-			"name": "Josef Dohnal",
+			"name": "Josef Dohnal"
 		}
 	],
 	"require": {
-		"php": ">=5.5.1",
+		"php": ">=5.5.1"
 	},
 	"require-dev": {
-		"nette/tester": "~1.3",
+		"nette/tester": "~1.3"
 	},
 	"autoload": {
 		"classmap": ["src/"]
