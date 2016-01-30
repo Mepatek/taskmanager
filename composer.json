@@ -10,6 +10,7 @@
 	],
 	"require": {
 		"php": ">=5.5.1",
+		"nette/utils": ">=2.3.8"
 		"nette/database": ">=2.3.8"
 	},
 	"require-dev": {
