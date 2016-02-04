@@ -30,6 +30,17 @@ class TaskRepository extends AbstractRepository
 
 
 	/**
+	 * Permanently delete task
+	 *
+	 * @param integer $id
+	 * @return boolean
+	 */
+	public function deletePermanently($id)
+	{
+		return $this->mapper->deletePermanently($id);
+	}
+
+	/**
 	 * Find by id
 	 *
 	 * @param integer $id
@@ -49,6 +60,20 @@ class TaskRepository extends AbstractRepository
 	public function findOneBy(array $values, $order=null)
 	{
 		return $this->mapper->findOneBy($values, $order);
+	}
+
+
+	/**
+	 * Find all task to run now
+	 * Where:
+	 * NextRun = NULL OR NextRun<=NOW()
+	 * Disabled = FALSE
+	 * Deleted = FALSE
+	 * State = 0
+	 */
+	public function findTasksToRun()
+	{
+		return $this->mapper->findTasksToRun();
 	}
 
 }
