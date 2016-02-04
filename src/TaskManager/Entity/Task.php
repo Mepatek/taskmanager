@@ -3,6 +3,7 @@
 
 namespace Mepatek\TaskManager\Entity;
 
+
 /**
  * Class Task
  * @package Mepatek\TaskManager\Entity
@@ -23,13 +24,27 @@ class Task extends AbstractEntity
 	/** @var string */
 	protected $description;
 	/** @var boolean */
-	protected $deleteAfterRun;
+	protected $deleteAfterRun = FALSE;
 	/** @var integer */
-	protected $state;
+	protected $state = 0;
+	/** @var boolean */
+	protected $disabled = FALSE;
 	/** @var \Nette\Utils\DateTime */
 	protected $nextRun;
 	/** @var \Nette\Utils\DateTime */
 	protected $lastRun;
+
+	/**
+	 * @var TaskAction[]
+	 * id => TaskAction
+	 */
+	protected $actions = array();
+	/**
+	 * @var TaskCondition[]
+	 * id => TaskCondition
+	 */
+	protected $conditions = array();
+
 
 	/**
 	 * @return int
@@ -45,7 +60,7 @@ class Task extends AbstractEntity
 	public function setId($id)
 	{
 		// ONLY if id is not set
-		if ( ! $this->id ) {
+		if (!$this->id) {
 			$this->id = (int)$id;
 		}
 	}
@@ -163,6 +178,22 @@ class Task extends AbstractEntity
 	}
 
 	/**
+	 * @return boolean
+	 */
+	public function getDisabled()
+	{
+		return $this->disabled ? TRUE : FALSE;
+	}
+
+	/**
+	 * @param boolean $disabled
+	 */
+	public function setDisabled($disabled)
+	{
+		$this->disabled = $disabled ? TRUE : FALSE;
+	}
+
+	/**
 	 * @return \Nette\Utils\DateTime
 	 */
 	public function getNextRun()
@@ -194,4 +225,107 @@ class Task extends AbstractEntity
 		$this->lastRun = $this->DateTime($lastRun);
 	}
 
+
+	/**
+	 * @return array|null
+	 */
+	public function getActions()
+	{
+		return $this->actions;
+	}
+
+	/**
+	 * Add action
+	 * @param \Mepatek\TaskManager\Entity\TaskAction $action
+	 * @return boolean FALSE - not added
+	 */
+	public function addAction($action)
+	{
+		if ( is_object($action) and $action instanceof TaskAction ) {
+			$this->actions[$action->id] = $action;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Delete action
+	 * @param int $id
+	 */
+	public function deleteAction($id)
+	{
+		if ( isset($this->actions[$id]) ) {
+			unset($this->actions[$id]);
+		}
+	}
+
+	/**
+	 * Delete all actions
+	 */
+	public function deleteAllActions()
+	{
+		$this->actions = array();
+	}
+
+
+	/**
+	 * @return array|null
+	 */
+	public function getConditions()
+	{
+		return $this->conditions;
+	}
+
+	/**
+	 * Add condition
+	 * @param \Mepatek\TaskManager\Entity\TaskCondition $condition
+	 * @return boolean FALSE - not added
+	 */
+	public function addCondition($condition)
+	{
+		if ( is_object($condition) and $condition instanceof TaskCondition ) {
+			$this->conditions[$condition->id] = $condition;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Delete condition
+	 * @param int $id
+	 */
+	public function deleteCondition($id)
+	{
+		if ( isset($this->conditions[$id]) ) {
+			unset($this->conditions[$id]);
+		}
+	}
+
+	/**
+	 * Delete all conditions
+	 */
+	public function deleteAllConditions()
+	{
+		$this->conditions = array();
+	}
+
+
+
+	/**
+	 * Run all actions
+	 * @return boolean TRUE if run all tasks ok
+	 */
+	public function run()
+	{
+		$retValue = false;
+
+		foreach ( $this->actions as $action ) {
+
+			$actionRetValue = $action->run();
+			$retValue = $actionRetValue and $retValue;
+
+		}
+
+		return $retValue;
+	}
 }
