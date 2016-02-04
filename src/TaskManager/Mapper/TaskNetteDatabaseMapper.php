@@ -4,107 +4,127 @@ namespace Mepatek\TaskManager\Mapper;
 
 use Nette,
 	Nette\Database\Context,
-	Mepatek\TaskManager\Entity\Task;
+	Mepatek\TaskManager\Entity\Task,
+	Mepatek\TaskManager\Entity\TaskAction,
+	Mepatek\TaskManager\Entity\TaskCondition;
+
 
 /**
- * Mapper NetteDatabase for Documents
- *
- * Document is saved in table DOLEXXXX.dbo.Dokumenty
- *
+ * Class TaskNetteDatabaseMapper
+ * @package Mepatek\TaskManager\Mapper
  */
 class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMapper
 {
-	/** Nette\Database\Context */
-	private $databaseDOLE;
-	/** App\Model\Vario */
-	private $vario;
+	/** @var Nette\Database\Context */
+	private $database;
+
+	/** @var boolean TRUE - find deleted row */
+	private $deleted;
 
 	/**
-	 * DokumentNetteDatabaseMapper constructor.
-	 * @param Context $databaseDOLE
-	 * @param Vario $vario
+	 * TaskNetteDatabaseMapper constructor.
+	 * @param Context $database
 	 * @param Logger|null $logger
 	 */
-	public function __construct(Context $databaseDOLE, Vario $vario, Logger $logger=null)
+	public function __construct(Context $database, Logger $logger=null)
 	{
-		$this->databaseDOLE = $databaseDOLE;
-		$this->vario = $vario;
+		$this->database = $database;
 		$this->logger = $logger;
 	}
 
 	/**
-	 * Save zakazka
+	 * Save item
+	 * @param Task $item
+	 * @return boolean
 	 */
 	public function save(&$item)
 	{
+		$data = $this->itemToData($item);
+
 		if (! $item->id) { // new --> insert
-			// must be set correct!
 
-			$data = $this->itemToData($item);
-			//$data["rowguid"] = new Nette\Database\SqlLiteral("UUID()");
-			$data["Datum_aktualizace"] = new Nette\Utils\DateTime();
-			$data["Format_ulozeni"] = 0;
-			if ( ! $data["Kniha"] ) {
-				$data["Kniha"] = "Dokumenty" . ($data["Agenda"] ? " - " . $data["Agenda"] : "");
-			}
+			unset($data["TaskID"]);
+			$data["Created"] = new Nette\Utils\DateTime();
 
-			// set primary ID
-			$data["ID"] = $this->getID($item);
-
-			$this->getTable()
+			$row = $this->getTable()
 				->insert($data);
-			$newItem = $this->find($data["ID"]);
-			if ($newItem) {
-				$this->logInsert(__CLASS__, $newItem);
-				$item = $newItem;
+			if ($row) {
+				$item->id = $row["TaskID"];
+				$this->logInsert(__CLASS__, $item);
 				return true;
 			} else {
 				return false;
 			}
-
 		} else { // update
-			$data = $this->itemToData($item);
-			unset($data["ID"]);
-			unset($data["Zaznam"]);
-			unset($data["Agenda"]);
-			unset($data["Kniha"]);
-			$oldItem = $this->find($item->id);
-			$this->getTable()
-				->where("ID", $item->id)
+			$item_old = $this->find($item->id);
+			unset($data["TaskID"]);
+			unset($data["Created"]);
+
+			$row = $this->getTable()
+				->where("TaskID", $item->id)
 				->update($data);
-			$this->logSave(__CLASS__, $oldItem, $item);
-			return true;
+			if ($row) {
+				$item = $this->find($item->id);
+				$this->logSave(__CLASS__, $item_old, $item);
+				return true;
+			} else {
+				return false;
+			}
 		}
 
+		$this->saveActions($item);
+		$this->saveConditions($item);
 		return true;
 	}
 
 	/**
-	 * Get ID for new item
-	 * @param Dokument $item
-	 */
-	private function getID(Dokument $item)
-	{
-		// id is string 30:
-		// 16 - uid + max 14 autor (mezery=>_)
-		$id = uniqid() . "001" . substr($item->autor, 0, 14);
-		//TODO: test if id not exist
-		return $id;
-	}
-
-	/**
-	 * Delete dokument
-	 * @param string $id
+	 * Delete item
+	 * @param integer $id
 	 * @return boolean
 	 */
 	public function delete($id)
 	{
 		$deletedRow = 0;
 		if (($item = $this->find($id))) {
+
+			$deleted = $this->deleted;
+			$this->deleted = true;
+
 			$deletedRow = $this->getTable()
-				->where("ID", $id)
+				->where("TaskID", $id)
+				->update(
+					array(
+						"Deleted" => TRUE,
+					)
+				);
+
+			$this->deleted = $deleted;
+
+			$this->logDelete(__CLASS__, $item, "UPDATE SET Deleted WHERE TaskID=" . $id . " (cnt: $deletedRow)");
+		}
+		return $deletedRow > 0;
+	}
+
+	/**
+	 * Permanently delete item
+	 * @param integer $id
+	 * @return boolean
+	 */
+	public function deletePermanently($id)
+	{
+		$deletedRow = 0;
+		if (($item = $this->find($id))) {
+
+			$deleted = $this->deleted;
+			$this->deleted = true;
+
+			$deletedRow = $this->getTable()
+				->where("TaskID", $id)
 				->delete();
-			$this->logDelete(__CLASS__, $item, "Delete * from Dokumenty Where ID=" . $id . " (cnt: $deletedRow)");
+
+			$this->deleted = $deleted;
+
+			$this->logDelete(__CLASS__, $item, "DELETE FROM Tasks WHERE TaskID=" . $id . " (cnt: $deletedRow)");
 		}
 		return $deletedRow > 0;
 	}
@@ -113,19 +133,25 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	 * Find 1 entity by ID
 	 *
 	 * @param string $id
-	 * @return \App\Model\Entity\Dokument
+	 * @return Task
 	 */
 	public function find($id)
 	{
 		$values["id"] = $id;
-		return $this->findOneBy($values);
+		$deleted = $this->deleted;
+		$this->deleted = true;
+
+		$item = $this->findOneBy($values);
+
+		$this->deleted = $deleted;
+		return $item;
 	}
 
 	/**
 	* Find first entity by $values (key=>value)
 	* @param array $values
 	* @param array $order Order => column=>ASC/DESC
-	* @return \App\Model\Entity\Dokument
+	* @return Task
 	*/
 	public function findOneBy(array $values, $order=null)
 	{
@@ -137,6 +163,26 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 		}
 	}
 
+	/**
+	 * Find all task to run now
+	 * Where:
+	 * NextRun = NULL OR NextRun<=NOW()
+	 * Disabled = FALSE
+	 * Deleted = FALSE
+	 * State = 0
+	 */
+	public function findTasksToRun()
+	{
+		$now = new \Nette\Utils\DateTime();
+		return $this->findBy(
+			array(
+				"(NextRun IS NULL OR NextRun<=?)" => $now,
+				"disabled" => false,
+				"deleted" => false,
+				"state" => 0,
+			)
+		);
+	}
 
 	/**
 	* Get view object
@@ -144,16 +190,20 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	*/
 	protected function getTable()
 	{
-		return $this->databaseDOLE->table("Dokumenty");
+		$table = $this->database->table("Tasks");
+		if ( ! $this->deleted ) {
+			$table->where("Deleted",FALSE);
+		}
+		return $table;
 	}
 
 	/**
 	 * Item data to array
 	 *
-	 * @param \App\Model\Entity\Dokument $item
+	 * @param Task $item
 	 * @return array
 	 */
-	private function itemToData(Dokument $item)
+	private function itemToData(Task $item)
 	{
 		$data = array();
 
@@ -168,19 +218,161 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	 * from data to item
 	 *
 	 * @param \Nette\Database\IRow $data
-	 * @return \App\Model\Entity\Dokument
+	 * @return Task
 	 */
 	protected function dataToItem($data)
 	{
-		$item = new Dokument;
+		$item = new Task;
 
 		foreach ($this->mapItemPropertySQLNames() as $property => $columnSql) {
 			$item->$property = $data->$columnSql;
 		}
 
+		$this->loadActions($item);
+		$this->loadConditions($item);
 		return $item;
 	}
 
+
+	/**
+	 * load actions to item
+	 *
+	 * @param Task $item
+	 */
+	private function loadActions(&$item)
+	{
+		$item->deleteAllActions();
+		$actions = $this->database
+			->table("TaskActions")
+			->where("TaskID", $item->id);
+		foreach ($actions as $action_data) {
+			$class = "TaskAction_" . $action_data->Type;
+			$action = new $class;
+
+			$action->id = $action_data->TaskActionID;
+			$action->type = $action_data->Type;
+			$action->data = $action_data->Data;
+			$action->order = $action_data->Order;
+
+			$item->addAction($action);
+
+		}
+	}
+
+	/**
+	 * Save actions from item
+	 *
+	 * @param Task $item
+	 */
+	public function saveActions($item)
+	{
+		$ids = array();
+		foreach ($item->actions as $action) {
+			$exists = $this->database
+				->table("TaskActions")
+				->where("TaskActionID", $action->id)
+				->count() > 0;
+
+			$data = array(
+				"TaskID"	=> $item->id,
+				"Type"		=> $action->type,
+				"Data"		=> $action->data,
+				"Order"		=> $action->order,
+			);
+
+			if ($exists) {
+				$this->database
+					->table("TaskActions")
+					->where("TaskActionID", $action->id)
+					->update($data);
+			} else {
+				$row = $this->database
+					->table("TaskActions")
+					->insert($data);
+				$action->id = $row["TaskActionID"];
+			}
+			$ids = $action->id;
+		}
+
+
+		$this->database
+			->table("TaskActions")
+			->where("TaskActionID NOT IN ?", $ids)
+			->delete();
+
+	}
+
+	/**
+	 * load conditions to item
+	 *
+	 * @param Task $item
+	 */
+	private function loadConditions(&$item)
+	{
+		$item->deleteAllConditions();
+		$conditions = $this->database
+			->table("TaskConditions")
+			->where("TaskID", $item->id);
+		foreach ($conditions as $condition_data) {
+			$class = "TaskCondition_" . $condition_data->Type;
+			$condition = new $class;
+
+			$condition->id = $condition_data->TaskActionID;
+			$condition->type = $condition_data->Type;
+			$condition->data = $condition_data->Data;
+			$condition->created = $condition_data->Created;
+			$condition->expired = $condition_data->Expired;
+			$condition->order = $condition_data->Order;
+
+			$item->addCondition($condition);
+
+		}
+	}
+
+	/**
+	 * Save conditions from item
+	 *
+	 * @param Task $item
+	 */
+	public function saveConditions($item)
+	{
+		$ids = array();
+		foreach ($item->conditions as $condition) {
+			$exists = $this->database
+					->table("TaskConditions")
+					->where("TaskConditionID", $condition->id)
+					->count() > 0;
+
+			$data = array(
+				"TaskID"	=> $item->id,
+				"Type"		=> $condition->type,
+				"Data"		=> $condition->data,
+				"Created"	=> $condition->created,
+				"Expired"	=> $condition->expired,
+				"Order"		=> $condition->order,
+			);
+
+			if ($exists) {
+				$this->database
+					->table("TaskConditions")
+					->where("TaskConditionID", $condition->id)
+					->update($data);
+			} else {
+				$row = $this->database
+					->table("TaskConditions")
+					->insert($data);
+				$condition->id = $row["TaskConditionID"];
+			}
+			$ids = $condition->id;
+		}
+
+
+		$this->database
+			->table("TaskConditions")
+			->where("TaskConditionID NOT IN ?", $ids)
+			->delete();
+
+	}
 
 	/**
 	 * Get array map of item property vs SQL columns name for ZAK_Zakazky table
@@ -189,18 +381,17 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	protected function mapItemPropertySQLNames()
 	{
 		return array (
-			"id"			=> "ID",
-			"zaznam"		=> "Zaznam",
-			"agenda"		=> "Agenda",
-			"kniha"			=> "Kniha",
-			"predmet"		=> "Predmet",
-			"typ"			=> "Typ_dokumentu",
-			"autor"			=> "Autor",
-			"datumCas"		=> "Datum_a_cas",
-			"popis"			=> "Popis",
-			"kategorie"		=> "Kategorie_dokumentu",
-			"urlSouboru"	=> "Soubor",
+			"id"			=> "TaskID",
+			"name"			=> "Name",
+			"created"		=> "Created",
+			"source"		=> "Source",
+			"author"		=> "Author",
+			"description"	=> "Description",
+			"deleteAfterRun"=> "DeleteAfterRun",
+			"state"			=> "State",
+			"disabled"		=> "Disabled",
+			"nextRun"		=> "NextRun",
+			"lastRun"		=> "LastRun",
 		);
 	}
-
 }
