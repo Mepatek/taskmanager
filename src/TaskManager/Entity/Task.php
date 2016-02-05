@@ -38,12 +38,12 @@ class Task extends AbstractEntity
 	 * @var TaskAction[]
 	 * id => TaskAction
 	 */
-	protected $actions = array();
+	private $actions = array();
 	/**
 	 * @var TaskCondition[]
 	 * id => TaskCondition
 	 */
-	protected $conditions = array();
+	private $conditions = array();
 
 
 	/**
@@ -313,15 +313,17 @@ class Task extends AbstractEntity
 
 	/**
 	 * Run all actions
-	 * @return boolean TRUE if run all tasks ok
+	 * @param \Nette\DI\Container $container
+	 * @param string $tasksDir
+	 * @return bool TRUE if run all tasks ok
 	 */
-	public function run()
+	public function run( $container, $tasksDir )
 	{
 		$retValue = false;
 
 		foreach ( $this->actions as $action ) {
 
-			$actionRetValue = $action->run();
+			$actionRetValue = $action->run( $container, $tasksDir );
 			$retValue = $actionRetValue and $retValue;
 
 		}

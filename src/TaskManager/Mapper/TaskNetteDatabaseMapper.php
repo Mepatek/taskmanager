@@ -4,6 +4,7 @@ namespace Mepatek\TaskManager\Mapper;
 
 use Nette,
 	Nette\Database\Context,
+	Mepatek\TaskManager\Entity,
 	Mepatek\TaskManager\Entity\Task,
 	Mepatek\TaskManager\Entity\TaskAction,
 	Mepatek\TaskManager\Entity\TaskCondition;
@@ -40,6 +41,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	public function save(&$item)
 	{
 		$data = $this->itemToData($item);
+		$retSave = false;
 
 		if (! $item->id) { // new --> insert
 
@@ -51,9 +53,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			if ($row) {
 				$item->id = $row["TaskID"];
 				$this->logInsert(__CLASS__, $item);
-				return true;
-			} else {
-				return false;
+				$retSave = true;
 			}
 		} else { // update
 			$item_old = $this->find($item->id);
@@ -64,17 +64,19 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 				->where("TaskID", $item->id)
 				->update($data);
 			if ($row) {
-				$item = $this->find($item->id);
 				$this->logSave(__CLASS__, $item_old, $item);
-				return true;
-			} else {
-				return false;
+				$retSave = true;
 			}
 		}
 
-		$this->saveActions($item);
-		$this->saveConditions($item);
-		return true;
+
+		if ( $retSave ) {
+			$this->saveActions($item);
+			$this->saveConditions($item);
+
+			$item = $this->find($item->id);
+		}
+		return $retSave;
 	}
 
 	/**
@@ -246,7 +248,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			->table("TaskActions")
 			->where("TaskID", $item->id);
 		foreach ($actions as $action_data) {
-			$class = "TaskAction_" . $action_data->Type;
+			$class = "Mepatek\\TaskManager\\Entity\\TaskAction_" . $action_data->Type;
 			$action = new $class;
 
 			$action->id = $action_data->TaskActionID;
@@ -267,6 +269,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	public function saveActions($item)
 	{
 		$ids = array();
+
 		foreach ($item->actions as $action) {
 			$exists = $this->database
 				->table("TaskActions")
@@ -291,15 +294,19 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 					->insert($data);
 				$action->id = $row["TaskActionID"];
 			}
-			$ids = $action->id;
+			$ids[] = $action->id;
 		}
 
-
-		$this->database
+		// delete not exist actions
+		$delTable = $this->database
 			->table("TaskActions")
-			->where("TaskActionID NOT IN ?", $ids)
-			->delete();
+			->where("TaskID", $item->id);
 
+		if ( count($ids) > 0 ) {
+			$delTable->where("TaskActionID NOT IN (?)", $ids);
+		}
+
+		$delTable->delete();
 	}
 
 	/**
@@ -314,15 +321,15 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			->table("TaskConditions")
 			->where("TaskID", $item->id);
 		foreach ($conditions as $condition_data) {
-			$class = "TaskCondition_" . $condition_data->Type;
+			$class = "Mepatek\\TaskManager\\Entity\\TaskCondition_" . $condition_data->Type;
 			$condition = new $class;
 
-			$condition->id = $condition_data->TaskActionID;
+			$condition->id = $condition_data->TaskConditionID;
 			$condition->type = $condition_data->Type;
 			$condition->data = $condition_data->Data;
 			$condition->created = $condition_data->Created;
 			$condition->expired = $condition_data->Expired;
-			$condition->order = $condition_data->Order;
+			$condition->active = $condition_data->Active;
 
 			$item->addCondition($condition);
 
@@ -337,6 +344,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	public function saveConditions($item)
 	{
 		$ids = array();
+
 		foreach ($item->conditions as $condition) {
 			$exists = $this->database
 					->table("TaskConditions")
@@ -349,7 +357,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 				"Data"		=> $condition->data,
 				"Created"	=> $condition->created,
 				"Expired"	=> $condition->expired,
-				"Order"		=> $condition->order,
+				"Active"	=> $condition->active,
 			);
 
 			if ($exists) {
@@ -363,15 +371,19 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 					->insert($data);
 				$condition->id = $row["TaskConditionID"];
 			}
-			$ids = $condition->id;
+			$ids[] = $condition->id;
 		}
 
-
-		$this->database
+		// delete not exist actions
+		$delTable = $this->database
 			->table("TaskConditions")
-			->where("TaskConditionID NOT IN ?", $ids)
-			->delete();
+			->where("TaskID", $item->id);
 
+		if ( count($ids) > 0 ) {
+			$delTable->where("TaskConditionID NOT IN (?)", $ids);
+		}
+
+		$delTable->delete();
 	}
 
 	/**
