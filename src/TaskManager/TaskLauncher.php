@@ -12,11 +12,12 @@ use Nette\Database\Context,
 class TaskLauncher
 {
 
-	/** @var string */
-	public $taskDir;
-
 	/** @var Context */
 	private $database;
+	/** @var \Nette\DI\Container */
+	private $container;
+	/** @var string */
+	private $taskskDir;
 
 	/** @var TaskRepository */
 	private $taskRepository;
@@ -24,12 +25,14 @@ class TaskLauncher
 	/**
 	 * TaskLauncher constructor.
 	 * @param Context $database
-	 * @param string $taskDir
+	 * @param string $container
+	 * @param string $tasksDir
 	 */
-	public function __construct( $database, $taskDir )
+	public function __construct( $database, $container, $tasksDir )
 	{
 		$this->database = $database;
-		$this->taskDir = $taskDir;
+		$this->container = $container;
+		$this->tasksDir = $tasksDir;
 		$taskMapper = new TaskNetteDatabaseMapper( $this->database );
 		$this->taskRepository = new TaskRepository( $taskMapper );
 	}
@@ -49,14 +52,15 @@ class TaskLauncher
 		$this->taskRepository->save($task);
 		*/
 
-		$task = new Task();
+		$task = new Task(  );
 		// find all the tasks to be run
 		$tasks = $this->taskRepository->findTasksToRun();
 		foreach ($tasks as $task) {
+
 			// if set state running run task
 			if ( $this->taskRepository->setStateRunning($task) ) {
 
-				$success = $task->run();
+				$success = $task->run( $this->container, $this->taskskDir );
 
 				$this->taskRepository->save($task);
 			}
