@@ -8,7 +8,7 @@ namespace Mepatek\TaskManager\Entity;
  * Class TaskAction
  * @package Mepatek\TaskManager\Entity
  */
-abstract class TaskAction extends AbstractEntity
+abstract class TaskAction extends AbstractEntity implements ITaskAction
 {
 
 	/** @var integer */
@@ -53,22 +53,6 @@ abstract class TaskAction extends AbstractEntity
 	public function setType($type)
 	{
 		$this->type = $this->StringTruncate($type, 30);
-	}
-
-	/**
-	 * @return mixed
-	 */
-	public function getData()
-	{
-		return $this->data;
-	}
-
-	/**
-	 * @param mixed $data
-	 */
-	public function setData($data)
-	{
-		$this->data = $data;
 	}
 
 	/**
