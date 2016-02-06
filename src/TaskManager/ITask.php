@@ -2,6 +2,7 @@
 
 namespace Mepatek\TaskManager;
 
+use Nette\DI\Container;
 
 /**
  * Interface ITask
@@ -9,8 +10,12 @@ namespace Mepatek\TaskManager;
  */
 interface ITask
 {
-	/** setup task and set container */
-	public function setUp( $container, $arguments );
+	/**
+	 * set container and arguments
+	 * @param Container $container
+	 * @param array $arguments
+	 */
+	public function __construct( Container $container, array $arguments );
 
 	/** run task */
 	public function run(  );
