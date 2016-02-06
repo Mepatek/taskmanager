@@ -3,6 +3,7 @@
 
 namespace Mepatek\TaskManager\Entity;
 
+use Nette\Utils\DateTime;
 
 /**
  * Class Task
@@ -33,6 +34,8 @@ class Task extends AbstractEntity
 	protected $nextRun;
 	/** @var \Nette\Utils\DateTime */
 	protected $lastRun;
+	/** @var bool */
+	protected $lastSuccess;
 
 	/**
 	 * @var TaskAction[]
@@ -225,6 +228,23 @@ class Task extends AbstractEntity
 		$this->lastRun = $this->DateTime($lastRun);
 	}
 
+	/**
+	 * @return boolean
+	 */
+	public function getLastSuccess()
+	{
+		return $this->lastSuccess ? TRUE : FALSE;
+	}
+
+	/**
+	 * @param boolean $lastSuccess
+	 */
+	public function setLastSuccess($lastSuccess)
+	{
+		$this->lastSuccess = $lastSuccess ? TRUE : FALSE;
+	}
+
+
 
 	/**
 	 * @return array|null
@@ -313,21 +333,43 @@ class Task extends AbstractEntity
 
 	/**
 	 * Run all actions
+	 * - set LastRun to now()
+	 * - set lastSuccess to true (if all action is ok) or false
+	 * - calculate nextRun datetime from all conditions
+	 *
 	 * @param \Nette\DI\Container $container
 	 * @param string $tasksDir
 	 * @return bool TRUE if run all tasks ok
 	 */
 	public function run( $container, $tasksDir )
 	{
-		$retValue = false;
+		$success = true;
 
+		// run all actions and set $success
 		foreach ( $this->actions as $action ) {
-
-			$actionRetValue = $action->run( $container, $tasksDir );
-			$retValue = $actionRetValue and $retValue;
-
+			$success = $action->run( $container, $tasksDir )
+							and $success;
 		}
 
-		return $retValue;
+		// set lastRun, lastSuccess
+		$this->lastRun = new DateTime();
+		$this->lastSuccess = $success;
+
+		$this->nextRun = null;
+		// find nextTime to run
+		foreach ( $this->conditions as $condition ) {
+			$nextRun = $condition->getNextRunTime( $this->lastRun );
+			// if nextRun less than lastRun set lastRun + 1min
+			if ( $nextRun < $this->lastRun ) {
+				$nextRun = $this->lastRun->add( new \DateInterval("PT1M") );
+			}
+			if ( $this->nextRun ) {
+				$this->nextRun = ($this->nextRun > $nextRun ) ? $nextRun : $this->nextRun;
+			} else {
+				$this->nextRun = $nextRun;
+			}
+		}
+
+		return $success;
 	}
 }

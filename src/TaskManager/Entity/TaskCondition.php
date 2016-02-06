@@ -8,15 +8,13 @@ namespace Mepatek\TaskManager\Entity;
  * Class TaskCondition
  * @package Mepatek\TaskManager\Entity
  */
-abstract class TaskCondition extends AbstractEntity
+abstract class TaskCondition extends AbstractEntity implements ITaskCondition
 {
 
 	/** @var integer */
 	protected $id;
 	/** @var string 30 */
 	protected $type;
-	/** @var mixed save as JSON string */
-	protected $data;
 	/** @var \Nette\Utils\DateTime */
 	protected $created;
 	/** @var \Nette\Utils\DateTime */
@@ -60,21 +58,6 @@ abstract class TaskCondition extends AbstractEntity
 		$this->type = $this->StringTruncate($type, 30);
 	}
 
-	/**
-	 * @return mixed
-	 */
-	public function getData()
-	{
-		return $this->data;
-	}
-
-	/**
-	 * @param mixed $data
-	 */
-	public function setData($data)
-	{
-		$this->data = $data;
-	}
 
 	/**
 	 * @return \Nette\Utils\DateTime

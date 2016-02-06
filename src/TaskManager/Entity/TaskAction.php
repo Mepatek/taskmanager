@@ -15,8 +15,6 @@ abstract class TaskAction extends AbstractEntity implements ITaskAction
 	protected $id = NULL;
 	/** @var string 30 */
 	protected $type;
-	/** @var mixed save as JSON string */
-	protected $data;
 	/** @var integer */
 	protected $order;
 

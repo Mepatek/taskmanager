@@ -11,6 +11,7 @@ namespace Mepatek\TaskManager\Entity;
  * Namespace
  * Arguments[]
  */
+use Nette\Neon\Exception;
 
 /**
  * Class TaskAction_ITask
@@ -20,11 +21,59 @@ class TaskAction_ITask extends TaskAction
 {
 
 	/** @var string */
-	private $className;
+	protected $className;
 	/** @var string */
-	private $nameSpace;
+	protected $nameSpace = "";
 	/** @var array */
-	private $arguments;
+	protected $arguments = array();
+
+	/**
+	 * @return string
+	 */
+	public function getClassName()
+	{
+		return $this->className;
+	}
+
+	/**
+	 * @param string $className
+	 */
+	public function setClassName($className)
+	{
+		$this->className = $className;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getNameSpace()
+	{
+		return $this->nameSpace;
+	}
+
+	/**
+	 * @param string $nameSpace
+	 */
+	public function setNameSpace($nameSpace)
+	{
+		$this->nameSpace = $nameSpace;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getArguments()
+	{
+		return $this->arguments;
+	}
+
+	/**
+	 * @param array $arguments
+	 */
+	public function setArguments($arguments)
+	{
+		$this->arguments = $arguments;
+	}
 
 
 	/**
@@ -32,14 +81,14 @@ class TaskAction_ITask extends TaskAction
 	 */
 	public function getData()
 	{
-		$this->data = json_encode(
+		$data = json_encode(
 			array (
 				"ClassName" => $this->className,
 				"NameSpace" => $this->nameSpace,
 				"Arguments" => $this->arguments,
 			)
 		);
-		return $this->data;
+		return $data;
 	}
 
 	/**
@@ -47,12 +96,10 @@ class TaskAction_ITask extends TaskAction
 	 */
 	public function setData($data)
 	{
-		$this->data = $data;
-
 		$decodedData = json_decode( $data );
-		$this->className = $decodedData["ClassName"];
-		$this->nameSpace = $decodedData["NameSpace"];
-		$this->arguments = $decodedData["Arguments"];
+		$this->className = $decodedData->ClassName;
+		$this->nameSpace = $decodedData->NameSpace;
+		$this->arguments = $decodedData->Arguments ? $decodedData->Arguments : array();
 
 	}
 
@@ -63,22 +110,34 @@ class TaskAction_ITask extends TaskAction
 	 * @param \Nette\DI\Container $container
 	 * @param string $tasksDir
 	 * @return bool
+	 * @throws \Exception
 	 */
 	public function run( $container, $tasksDir )
 	{
-		$fileTask = $this->normalizePath( $tasksDir ) . DIRECTORY_SEPARATOR . $this->className . ".php";
+		$success = false;
+
+		$fileTask =  $tasksDir . DIRECTORY_SEPARATOR . $this->className . ".php";
 		$class = $this->nameSpace . "\\" . $this->className;
 
-		require_once( $fileTask );
+		if ( file_exists( $fileTask ) ) {
+			require_once( $fileTask );
 
-		$itask = new $class;
-		if ( ! $itask instanceof \Mepatek\TaskManager\ITask ) {
-			// TODO: run exception
+			$itask = new $class( $container, $this->arguments );
+			if ( ! $itask instanceof \Mepatek\TaskManager\ITask ) {
+				// TODO: exception
+				throw new \Exception('Třída "' . $class . '" nemá implementováno ITask');
+			} else {
+				$success = $itask->run();
+			}
+
+		} else {
+			// TODO: exceptions
+			throw new \Exception('Neexistuje soubor "' . $fileTask . '" s třídou "' . $class . '"');
+			$success = false;
 		}
 
-		$itask->setUp( $container, $this->arguments );
 
-		return $itask->run();
+		return $success;
 
 	}
 
