@@ -12,7 +12,8 @@
 		"php": ">=5.5.1",
 		"nette/utils": ">=2.3.7",
 		"nette/database": ">=2.3.7",
-		"nette/di": "^2.3"
+		"nette/di": "^2.3",
+		"mtdowling/cron-expression": "^1.1"
 	},
 	"require-dev": {
 		"nette/tester": "~1.3"

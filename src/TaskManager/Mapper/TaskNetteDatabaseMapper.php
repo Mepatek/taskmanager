@@ -186,6 +186,32 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 		);
 	}
 
+
+	/**
+	 * Lock table for read only and set task state to running (State = 1)
+	 * @param Task $task
+	 * @return bool
+	 */
+	public function setStateRunning( Task $task )
+	{
+		$table = $this->getTable();
+
+		$cnt = $table
+			->where("TaskID", $task->id)
+			->where("State", $task->state)
+			->update(
+				array(
+					"State"	=> 1,
+				)
+			);
+
+		if ( $cnt > 0 ) {
+			$task->state = 1;
+		}
+
+		return $cnt > 0;
+	}
+
 	/**
 	* Get view object
 	* @return \Nette\Database\Table\Selection
@@ -404,6 +430,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			"disabled"		=> "Disabled",
 			"nextRun"		=> "NextRun",
 			"lastRun"		=> "LastRun",
+			"lastSuccess"	=> "LastSuccess",
 		);
 	}
 }

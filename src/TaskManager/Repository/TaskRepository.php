@@ -76,4 +76,15 @@ class TaskRepository extends AbstractRepository
 		return $this->mapper->findTasksToRun();
 	}
 
+
+	/**
+	 * Set task state to running (State = 1)
+	 * @param Task $task
+	 * @return bool
+	 */
+	public function setStateRunning( Task $task )
+	{
+		return $this->mapper->setStateRunning( $task );
+	}
+
 }

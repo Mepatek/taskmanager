@@ -2,6 +2,7 @@
 
 namespace Mepatek\TaskManager;
 
+use Exception;
 
 use Nette\Database\Context,
 	Mepatek\TaskManager\Repository\TaskRepository,
@@ -17,7 +18,7 @@ class TaskLauncher
 	/** @var \Nette\DI\Container */
 	private $container;
 	/** @var string */
-	private $taskskDir;
+	private $tasksDir;
 
 	/** @var TaskRepository */
 	private $taskRepository;
@@ -52,20 +53,30 @@ class TaskLauncher
 		$this->taskRepository->save($task);
 		*/
 
+		$success = true;
+
 		$task = new Task(  );
 		// find all the tasks to be run
 		$tasks = $this->taskRepository->findTasksToRun();
 		foreach ($tasks as $task) {
 
 			// if set state running run task
-			if ( $this->taskRepository->setStateRunning($task) ) {
+			try {
+				$this->taskRepository->setStateRunning( $task );
 
-				$success = $task->run( $this->container, $this->taskskDir );
+				$success = $task->run( $this->container, $this->tasksDir )
+					and $success;
 
-				$this->taskRepository->save($task);
+			} catch (Exception $e) {
+				var_dump( $e );
+				$success = false;
 			}
+			// set state idle
+			$task->state = 0;
+			$this->taskRepository->save( $task );
 		}
-		var_dump($tasks);
-		echo "XXX";
+		//var_dump($tasks);
+
+		return $success;
 	}
 }
