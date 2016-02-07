@@ -47,7 +47,10 @@ class TaskCondition_Cron extends TaskCondition
 	public function setData($data)
 	{
 		$decodedData = json_decode( $data );
-		$this->cronExpression = $decodedData->CronExpression;
+
+		if ($decodedData) {
+			$this->cronExpression = $decodedData->CronExpression;
+		}
 
 	}
 
@@ -61,7 +64,6 @@ class TaskCondition_Cron extends TaskCondition
 	{
 		$cron = Cron\CronExpression::factory( $this->cronExpression );
 		$nextRun = new DateTime;
-		$nextRun->from( $cron->getNextRunDate($lastRun) );
-		return $nextRun;
+		return $nextRun->from( $cron->getNextRunDate($lastRun) );
 	}
 }
