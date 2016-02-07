@@ -97,9 +97,12 @@ class TaskAction_ITask extends TaskAction
 	public function setData($data)
 	{
 		$decodedData = json_decode( $data );
-		$this->className = $decodedData->ClassName;
-		$this->nameSpace = $decodedData->NameSpace;
-		$this->arguments = $decodedData->Arguments ? $decodedData->Arguments : array();
+
+		if ($decodedData) {
+			$this->className = $decodedData->ClassName;
+			$this->nameSpace = $decodedData->NameSpace;
+			$this->arguments = $decodedData->Arguments ? $decodedData->Arguments : array();
+		}
 
 	}
 
