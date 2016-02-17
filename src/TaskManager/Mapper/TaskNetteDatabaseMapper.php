@@ -175,12 +175,11 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	 */
 	public function findTasksToRun()
 	{
-		$now = new \Nette\Utils\DateTime();
+		$now = new \Nette\Database\SqlLiteral("CURRENT_TIMESTAMP");
 		return $this->findBy(
 			array(
 				"(NextRun IS NULL OR NextRun<=?)" => $now,
 				"disabled" => false,
-				"deleted" => false,
 				"state" => 0,
 			)
 		);
@@ -278,7 +277,6 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			$action = new $class;
 
 			$action->id = $action_data->TaskActionID;
-			$action->type = $action_data->Type;
 			$action->data = $action_data->Data;
 			$action->order = $action_data->Order;
 
@@ -290,7 +288,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	/**
 	 * Save actions from item
 	 *
-	 * @param Task $item
+	 * @param Task $ite
 	 */
 	public function saveActions($item)
 	{
@@ -351,7 +349,6 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			$condition = new $class;
 
 			$condition->id = $condition_data->TaskConditionID;
-			$condition->type = $condition_data->Type;
 			$condition->data = $condition_data->Data;
 			$condition->created = $condition_data->Created;
 			$condition->expired = $condition_data->Expired;
@@ -413,7 +410,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	}
 
 	/**
-	 * Get array map of item property vs SQL columns name for ZAK_Zakazky table
+	 * Get array map of item property vs SQL columns name for Tasks table
 	 * @return array
 	 */
 	protected function mapItemPropertySQLNames()
