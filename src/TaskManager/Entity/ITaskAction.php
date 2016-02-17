@@ -13,5 +13,7 @@ interface ITaskAction
 	public function getData();
 	/** @param string $data */
 	public function setData($data);
+	/** @return string */
+	public function getType();
 
 }

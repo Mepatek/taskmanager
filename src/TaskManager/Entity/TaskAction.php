@@ -13,8 +13,6 @@ abstract class TaskAction extends AbstractEntity implements ITaskAction
 
 	/** @var integer */
 	protected $id = NULL;
-	/** @var string 30 */
-	protected $type;
 	/** @var integer */
 	protected $order;
 
@@ -37,21 +35,6 @@ abstract class TaskAction extends AbstractEntity implements ITaskAction
 		}
 	}
 
-	/**
-	 * @return string
-	 */
-	public function getType()
-	{
-		return $this->type;
-	}
-
-	/**
-	 * @param string $type
-	 */
-	public function setType($type)
-	{
-		$this->type = $this->StringTruncate($type, 30);
-	}
 
 	/**
 	 * @return int

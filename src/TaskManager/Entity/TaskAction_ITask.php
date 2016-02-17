@@ -30,6 +30,14 @@ class TaskAction_ITask extends TaskAction
 	/**
 	 * @return string
 	 */
+	public function getType()
+	{
+		return "ITask";
+	}
+
+	/**
+	 * @return string
+	 */
 	public function getClassName()
 	{
 		return $this->className;
