@@ -4,6 +4,7 @@
 namespace Mepatek\TaskManager\Entity;
 
 use Nette\Utils\DateTime;
+use Exception;
 
 /**
  * Class Task
@@ -47,6 +48,12 @@ class Task extends AbstractEntity
 	 * id => TaskCondition
 	 */
 	private $conditions = array();
+	/**
+	 * @var TaskHistory[]
+	 * id => TaskHistory
+	 * NULL -> not loaded, array -> loaded
+	 */
+	private $history = NULL;
 
 
 	/**
@@ -329,6 +336,30 @@ class Task extends AbstractEntity
 		$this->conditions = array();
 	}
 
+	/**
+	 * @return TaskHistory[]
+	 */
+	public function getHistory()
+	{
+		return $this->history;
+	}
+
+	/**
+	 * @param TaskHistory[] $history
+	 */
+	public function setHistory($history)
+	{
+		$this->history = $history;
+	}
+
+	/**
+	 * Is history loaded?
+	 * @return bool
+	 */
+	public function isHistoryLoaded()
+	{
+		return is_array( $this->history );
+	}
 
 
 	/**
@@ -347,13 +378,29 @@ class Task extends AbstractEntity
 
 		// run all actions and set $success
 		foreach ( $this->actions as $action ) {
+			// any exception = success false
+			try {
 			$success = $action->run( $container, $tasksDir )
 							and $success;
+			} catch (Exception $e) {
+				$success = false;
+			}
+
 		}
 
+		$this->lastSuccess = $success;
+
+		return $success;
+	}
+
+
+	/**
+	 * Calculate and set last and next run
+	 */
+	public function setLastAndNextRun()
+	{
 		// set lastRun, lastSuccess
 		$this->lastRun = new DateTime();
-		$this->lastSuccess = $success;
 
 		$this->nextRun = null;
 		// find nextTime to run
@@ -369,7 +416,6 @@ class Task extends AbstractEntity
 				$this->nextRun = $nextRun;
 			}
 		}
-
-		return $success;
 	}
+
 }
