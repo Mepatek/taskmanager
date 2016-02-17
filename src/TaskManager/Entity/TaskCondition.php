@@ -13,8 +13,6 @@ abstract class TaskCondition extends AbstractEntity implements ITaskCondition
 
 	/** @var integer */
 	protected $id;
-	/** @var string 30 */
-	protected $type;
 	/** @var \Nette\Utils\DateTime */
 	protected $created;
 	/** @var \Nette\Utils\DateTime */
@@ -40,22 +38,6 @@ abstract class TaskCondition extends AbstractEntity implements ITaskCondition
 		if ( ! $this->id ) {
 			$this->id = (int)$id;
 		}
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getType()
-	{
-		return $this->type;
-	}
-
-	/**
-	 * @param string $type
-	 */
-	public function setType($type)
-	{
-		$this->type = $this->StringTruncate($type, 30);
 	}
 
 

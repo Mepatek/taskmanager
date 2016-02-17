@@ -14,6 +14,14 @@ class TaskCondition_Cron extends TaskCondition
 	/**
 	 * @return string
 	 */
+	public function getType()
+	{
+		return "Cron";
+	}
+
+	/**
+	 * @return string
+	 */
 	public function getCronExpression()
 	{
 		return $this->cronExpression;
