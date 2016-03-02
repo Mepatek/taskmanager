@@ -5,6 +5,7 @@ namespace Mepatek\TaskManager;
 use Exception;
 
 use Nette\Database\Context,
+	Mepatek\TaskManager\Entity\Output,
 	Mepatek\TaskManager\Repository\TaskRepository,
 	Mepatek\TaskManager\Mapper\TaskNetteDatabaseMapper,
 	Mepatek\TaskManager\Repository\TaskHistoryRepository,
@@ -53,14 +54,8 @@ class TaskLauncher
 	public function run( )
 	{
 
-		/*
-		$task = new \Mepatek\TaskManager\Entity\Task();
-		$task->name = "Načítání přijatých dokladů";
-		$task->source = "admin";
-		$task->author = "Mepatek";
-		$task->description = "Pravidelně prochází adresář se skeny a načítá dokumenty do Varia k přijatým dokladům";
-		$this->taskRepository->save($task);
-		*/
+		// set time limit 4 hour
+		set_time_limit(4 * 60 * 60);
 
 		$success = true;
 
@@ -72,36 +67,29 @@ class TaskLauncher
 			$taskHistory = new TaskHistory();
 			$taskHistory->taskId = $task->id;
 			$taskHistory->started = new DateTime();
+			$taskHistory->output = new Output;
+			$this->taskHistoryRepository->save( $taskHistory );
 
 			$resultCode = 0;
-			$outputError = "";
-
-			// buffering output
-			ob_start();
 
 			// if set state running run task
 			try {
 				$this->taskRepository->setStateRunning( $task );
 
-				$success = $task->run( $this->container, $this->tasksDir )
+				$success = $task->run( $this->container, $this->tasksDir, $taskHistory->output )
 					and $success;
 
 			} catch (Exception $e) {
 				$resultCode = $e->getCode();
-				$outputError = $outputError . "ERROR (code: " . $e->getCode() . ") " . $e->getMessage() . "\n"
+				$taskHistory->output->error("(code: " . $e->getCode() . ") " . $e->getMessage() . "\n"
 						. "file '" . $e->getFile() . "' (line " . $e->getLine() . ")\n"
-						. $e->getTraceAsString() . "\n\n";
+						. $e->getTraceAsString() . "\n\n");
 				$success = false;
 			}
 
 
-			$output = ob_get_contents();
-			ob_end_clean();
-
 			$taskHistory->finished = new DateTime();
 			$taskHistory->resultCode = $resultCode;
-			$taskHistory->output = ( $outputError ? $outputError : "" )
-				. $output;
 			$this->taskHistoryRepository->save( $taskHistory );
 
 			// set state idle

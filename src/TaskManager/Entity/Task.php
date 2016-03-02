@@ -14,7 +14,7 @@ class Task extends AbstractEntity
 {
 
 	/** @var integer */
-	protected $id = NULL;
+	protected $id = null;
 	/** @var string 150 */
 	protected $name;
 	/** @var \Nette\Utils\DateTime */
@@ -26,11 +26,11 @@ class Task extends AbstractEntity
 	/** @var string */
 	protected $description;
 	/** @var boolean */
-	protected $deleteAfterRun = FALSE;
+	protected $deleteAfterRun = false;
 	/** @var integer */
 	protected $state = 0;
 	/** @var boolean */
-	protected $disabled = FALSE;
+	protected $disabled = false;
 	/** @var \Nette\Utils\DateTime */
 	protected $nextRun;
 	/** @var \Nette\Utils\DateTime */
@@ -42,18 +42,18 @@ class Task extends AbstractEntity
 	 * @var TaskAction[]
 	 * id => TaskAction
 	 */
-	private $actions = array();
+	private $actions = [];
 	/**
 	 * @var TaskCondition[]
 	 * id => TaskCondition
 	 */
-	private $conditions = array();
+	private $conditions = [];
 	/**
 	 * @var TaskHistory[]
 	 * id => TaskHistory
 	 * NULL -> not loaded, array -> loaded
 	 */
-	private $history = NULL;
+	private $history = null;
 
 
 	/**
@@ -160,7 +160,7 @@ class Task extends AbstractEntity
 	 */
 	public function getDeleteAfterRun()
 	{
-		return $this->deleteAfterRun ? TRUE : FALSE;
+		return $this->deleteAfterRun ? true : false;
 	}
 
 	/**
@@ -168,7 +168,7 @@ class Task extends AbstractEntity
 	 */
 	public function setDeleteAfterRun($deleteAfterRun)
 	{
-		$this->deleteAfterRun = $deleteAfterRun ? TRUE : FALSE;
+		$this->deleteAfterRun = $deleteAfterRun ? true : false;
 	}
 
 	/**
@@ -192,7 +192,7 @@ class Task extends AbstractEntity
 	 */
 	public function getDisabled()
 	{
-		return $this->disabled ? TRUE : FALSE;
+		return $this->disabled ? true : false;
 	}
 
 	/**
@@ -200,7 +200,7 @@ class Task extends AbstractEntity
 	 */
 	public function setDisabled($disabled)
 	{
-		$this->disabled = $disabled ? TRUE : FALSE;
+		$this->disabled = $disabled ? true : false;
 	}
 
 	/**
@@ -240,7 +240,7 @@ class Task extends AbstractEntity
 	 */
 	public function getLastSuccess()
 	{
-		return $this->lastSuccess ? TRUE : FALSE;
+		return $this->lastSuccess ? true : false;
 	}
 
 	/**
@@ -248,9 +248,8 @@ class Task extends AbstractEntity
 	 */
 	public function setLastSuccess($lastSuccess)
 	{
-		$this->lastSuccess = $lastSuccess ? TRUE : FALSE;
+		$this->lastSuccess = $lastSuccess ? true : false;
 	}
-
 
 
 	/**
@@ -263,12 +262,14 @@ class Task extends AbstractEntity
 
 	/**
 	 * Add action
+	 *
 	 * @param \Mepatek\TaskManager\Entity\TaskAction $action
+	 *
 	 * @return boolean FALSE - not added
 	 */
 	public function addAction($action)
 	{
-		if ( is_object($action) and $action instanceof TaskAction ) {
+		if (is_object($action) and $action instanceof TaskAction) {
 			$this->actions[$action->id] = $action;
 			return true;
 		}
@@ -277,11 +278,12 @@ class Task extends AbstractEntity
 
 	/**
 	 * Delete action
+	 *
 	 * @param int $id
 	 */
 	public function deleteAction($id)
 	{
-		if ( isset($this->actions[$id]) ) {
+		if (isset($this->actions[$id])) {
 			unset($this->actions[$id]);
 		}
 	}
@@ -291,7 +293,7 @@ class Task extends AbstractEntity
 	 */
 	public function deleteAllActions()
 	{
-		$this->actions = array();
+		$this->actions = [];
 	}
 
 
@@ -305,12 +307,14 @@ class Task extends AbstractEntity
 
 	/**
 	 * Add condition
+	 *
 	 * @param \Mepatek\TaskManager\Entity\TaskCondition $condition
+	 *
 	 * @return boolean FALSE - not added
 	 */
 	public function addCondition($condition)
 	{
-		if ( is_object($condition) and $condition instanceof TaskCondition ) {
+		if (is_object($condition) and $condition instanceof TaskCondition) {
 			$this->conditions[$condition->id] = $condition;
 			return true;
 		}
@@ -319,11 +323,12 @@ class Task extends AbstractEntity
 
 	/**
 	 * Delete condition
+	 *
 	 * @param int $id
 	 */
 	public function deleteCondition($id)
 	{
-		if ( isset($this->conditions[$id]) ) {
+		if (isset($this->conditions[$id])) {
 			unset($this->conditions[$id]);
 		}
 	}
@@ -333,7 +338,7 @@ class Task extends AbstractEntity
 	 */
 	public function deleteAllConditions()
 	{
-		$this->conditions = array();
+		$this->conditions = [];
 	}
 
 	/**
@@ -358,7 +363,7 @@ class Task extends AbstractEntity
 	 */
 	public function isHistoryLoaded()
 	{
-		return is_array( $this->history );
+		return is_array($this->history);
 	}
 
 
@@ -368,20 +373,22 @@ class Task extends AbstractEntity
 	 * - set lastSuccess to true (if all action is ok) or false
 	 * - calculate nextRun datetime from all conditions
 	 *
-	 * @param \Nette\DI\Container $container
-	 * @param string $tasksDir
+	 * @param \Nette\DI\Container                $container
+	 * @param string                             $tasksDir
+	 * @param \Mepatek\TaskManager\Entity\Output $output
+	 *
 	 * @return bool TRUE if run all tasks ok
 	 */
-	public function run( $container, $tasksDir )
+	public function run($container, $tasksDir, Output $output)
 	{
 		$success = true;
 
 		// run all actions and set $success
-		foreach ( $this->actions as $action ) {
+		foreach ($this->actions as $action) {
 			// any exception = success false
 			try {
-			$success = $action->run( $container, $tasksDir )
-							and $success;
+				$success = $action->run($container, $tasksDir, $output)
+				and $success;
 			} catch (Exception $e) {
 				$success = false;
 			}
@@ -404,14 +411,14 @@ class Task extends AbstractEntity
 
 		$this->nextRun = null;
 		// find nextTime to run
-		foreach ( $this->conditions as $condition ) {
-			$nextRun = $condition->getNextRunTime( $this->lastRun );
+		foreach ($this->conditions as $condition) {
+			$nextRun = $condition->getNextRunTime($this->lastRun);
 			// if nextRun less than lastRun set lastRun + 1min
-			if ( $nextRun < $this->lastRun ) {
-				$nextRun = $this->lastRun->add( new \DateInterval("PT1M") );
+			if ($nextRun < $this->lastRun) {
+				$nextRun = $this->lastRun->add(new \DateInterval("PT1M"));
 			}
-			if ( $this->nextRun ) {
-				$this->nextRun = ($this->nextRun > $nextRun ) ? $nextRun : $this->nextRun;
+			if ($this->nextRun) {
+				$this->nextRun = ($this->nextRun > $nextRun) ? $nextRun : $this->nextRun;
 			} else {
 				$this->nextRun = $nextRun;
 			}

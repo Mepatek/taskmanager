@@ -24,7 +24,7 @@ class TaskHistory extends AbstractEntity
 	protected $resultCode;
 	/** @var string 150 */
 	protected $user;
-	/** @var string */
+	/** @var Output */
 	protected $output;
 
 	/**
@@ -127,7 +127,7 @@ class TaskHistory extends AbstractEntity
 	}
 
 	/**
-	 * @return string
+	 * @return Output
 	 */
 	public function getOutput()
 	{
@@ -135,11 +135,18 @@ class TaskHistory extends AbstractEntity
 	}
 
 	/**
-	 * @param string $output
+	 * @param Output|string $output
 	 */
 	public function setOutput($output)
 	{
-		$this->output = $output;
+		if ($output instanceof Output) {
+			$this->output = $output;
+		} else {
+			$this->output = new Output();
+			$this->output->write(
+				(string)$output
+			);
+		}
 	}
 
 }

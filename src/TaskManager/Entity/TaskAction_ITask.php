@@ -4,7 +4,6 @@
 namespace Mepatek\TaskManager\Entity;
 
 
-
 /*
  * Data JSON:
  * ClassName (without namespace)
@@ -25,7 +24,7 @@ class TaskAction_ITask extends TaskAction
 	/** @var string */
 	protected $nameSpace = "";
 	/** @var array */
-	protected $arguments = array();
+	protected $arguments = [];
 
 	/**
 	 * @return string
@@ -90,11 +89,11 @@ class TaskAction_ITask extends TaskAction
 	public function getData()
 	{
 		$data = json_encode(
-			array (
+			[
 				"ClassName" => $this->className,
 				"NameSpace" => $this->nameSpace,
 				"Arguments" => $this->arguments,
-			)
+			]
 		);
 		return $data;
 	}
@@ -104,37 +103,40 @@ class TaskAction_ITask extends TaskAction
 	 */
 	public function setData($data)
 	{
-		$decodedData = json_decode( $data );
+		$decodedData = json_decode($data);
 
 		if ($decodedData) {
 			$this->className = $decodedData->ClassName;
 			$this->nameSpace = $decodedData->NameSpace;
-			$this->arguments = $decodedData->Arguments ? $decodedData->Arguments : array();
+			$this->arguments = $decodedData->Arguments ? $decodedData->Arguments : [];
 		}
 
 	}
 
 
-
 	/**
 	 * Run task implements from ITask
-	 * @param \Nette\DI\Container $container
-	 * @param string $tasksDir
+	 *
+	 * @param \Nette\DI\Container                $container
+	 * @param string                             $tasksDir
+	 * @param string                             $tasksDir
+	 * @param \Mepatek\TaskManager\Entity\Output $output
+	 *
 	 * @return bool
 	 * @throws \Exception
 	 */
-	public function run( $container, $tasksDir )
+	public function run($container, $tasksDir, Output $output)
 	{
 		$success = false;
 
-		$fileTask =  $tasksDir . DIRECTORY_SEPARATOR . $this->className . ".php";
+		$fileTask = $tasksDir . DIRECTORY_SEPARATOR . $this->className . ".php";
 		$class = $this->nameSpace . "\\" . $this->className;
 
-		if ( file_exists( $fileTask ) ) {
-			require_once( $fileTask );
+		if (file_exists($fileTask)) {
+			require_once($fileTask);
 
-			$itask = new $class( $container, $this->arguments );
-			if ( ! $itask instanceof \Mepatek\TaskManager\ITask ) {
+			$itask = new $class($container, $output, $this->arguments);
+			if (!$itask instanceof \Mepatek\TaskManager\ITask) {
 				// TODO: exception
 				throw new \Exception('Třída "' . $class . '" nemá implementováno ITask');
 			} else {

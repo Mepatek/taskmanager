@@ -8,7 +8,7 @@ namespace Mepatek\TaskManager\Entity;
 interface ITaskAction
 {
 	/** run task */
-	public function run( $container, $tasksDir );
+	public function run( $container, $tasksDir, \Mepatek\TaskManager\Entity\Output $output );
 	/** @return string */
 	public function getData();
 	/** @param string $data */
