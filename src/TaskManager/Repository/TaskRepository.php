@@ -2,9 +2,15 @@
 
 namespace Mepatek\TaskManager\Repository;
 
-use Mepatek\TaskManager\Mapper\IMapper,
-	Mepatek\TaskManager\Entity\Task;
+use Mepatek\Mapper\IMapper,
+	Mepatek\Repository\AbstractRepository;
 
+use Mepatek\TaskManager\Entity\Task;
+
+/**
+ * Class TaskRepository
+ * @package Mepatek\TaskManager\Repository
+ */
 class TaskRepository extends AbstractRepository
 {
 
@@ -20,7 +26,9 @@ class TaskRepository extends AbstractRepository
 
 	/**
 	 * Save
+	 *
 	 * @param Task $item
+	 *
 	 * @return boolean
 	 */
 	public function save(Task &$item)
@@ -33,6 +41,7 @@ class TaskRepository extends AbstractRepository
 	 * Permanently delete task
 	 *
 	 * @param integer $id
+	 *
 	 * @return boolean
 	 */
 	public function deletePermanently($id)
@@ -44,6 +53,7 @@ class TaskRepository extends AbstractRepository
 	 * Find by id
 	 *
 	 * @param integer $id
+	 *
 	 * @return Task
 	 */
 	public function find($id)
@@ -53,11 +63,13 @@ class TaskRepository extends AbstractRepository
 
 	/**
 	 * Find first item by $values (key=>value)
+	 *
 	 * @param array $values
 	 * @param array $order Order => column=>ASC/DESC
+	 *
 	 * @return Task
 	 */
-	public function findOneBy(array $values, $order=null)
+	public function findOneBy(array $values, $order = null)
 	{
 		return $this->mapper->findOneBy($values, $order);
 	}
@@ -79,12 +91,14 @@ class TaskRepository extends AbstractRepository
 
 	/**
 	 * Set task state to running (State = 1)
+	 *
 	 * @param Task $task
+	 *
 	 * @return bool
 	 */
-	public function setStateRunning( Task $task )
+	public function setStateRunning(Task $task)
 	{
-		return $this->mapper->setStateRunning( $task );
+		return $this->mapper->setStateRunning($task);
 	}
 
 }

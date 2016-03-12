@@ -2,6 +2,10 @@
 
 namespace Mepatek\TaskManager\Mapper;
 
+use Mepatek\Mapper\IMapper;
+use Mepatek\Mapper\AbstractNetteDatabaseMapper;
+use Mepatek\Logger;
+
 use Nette,
 	Nette\Database\Context,
 	Mepatek\TaskManager\Entity,
@@ -19,10 +23,11 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 
 	/**
 	 * TaskHistoryNetteDatabaseMapper constructor.
-	 * @param Context $database
+	 *
+	 * @param Context     $database
 	 * @param Logger|null $logger
 	 */
-	public function __construct(Context $database, Logger $logger=null)
+	public function __construct(Context $database, Logger $logger = null)
 	{
 		$this->database = $database;
 		$this->logger = $logger;
@@ -30,7 +35,9 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 
 	/**
 	 * Save item
+	 *
 	 * @param TaskHistory $item
+	 *
 	 * @return boolean
 	 */
 	public function save(&$item)
@@ -38,7 +45,7 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 		$data = $this->itemToData($item);
 		$retSave = false;
 
-		if (! $item->id) { // new --> insert
+		if (!$item->id) { // new --> insert
 
 			unset($data["TaskHistoryID"]);
 
@@ -66,28 +73,55 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 	}
 
 	/**
-	 * Delete item
-	 * @param integer $id
-	 * @return boolean
+	 * Item data to array
+	 *
+	 * @param TaskHistory $item
+	 *
+	 * @return array
 	 */
-	public function delete($id)
+	private function itemToData(TaskHistory $item)
 	{
-		$deletedRow = 0;
-		if (($item = $this->find($id))) {
+		$data = [];
 
-			$deletedRow = $this->getTable()
-				->where("TaskHistoryID", $id)
-				->delete( );
-
-			$this->logDelete(__CLASS__, $item, "DEELETE WHERE TaskHistoryID=" . $id . " (cnt: $deletedRow)");
+		foreach ($this->mapItemPropertySQLNames() as $property => $columnSql) {
+			$data[$columnSql] = $item->$property;
 		}
-		return $deletedRow > 0;
+
+		return $data;
+	}
+
+	/**
+	 * Get array map of item property vs SQL columns name for TaskHistory table
+	 * @return array
+	 */
+	protected function mapItemPropertySQLNames()
+	{
+		return [
+			"id"         => "TaskHistoryID",
+			"taskId"     => "TaskID",
+			"started"    => "Started",
+			"finished"   => "Finished",
+			"resultCode" => "ResultCode",
+			"user"       => "User",
+			"output"     => "Output",
+		];
+	}
+
+	/**
+	 * Get view object
+	 * @return \Nette\Database\Table\Selection
+	 */
+	protected function getTable()
+	{
+		$table = $this->database->table("TaskHistory");
+		return $table;
 	}
 
 	/**
 	 * Find 1 entity by ID
 	 *
 	 * @param string $id
+	 *
 	 * @return TaskHistory
 	 */
 	public function find($id)
@@ -98,52 +132,49 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 	}
 
 	/**
-	* Find first entity by $values (key=>value)
-	* @param array $values
-	* @param array $order Order => column=>ASC/DESC
-	* @return TaskHistory
-	*/
-	public function findOneBy(array $values, $order=null)
+	 * Find first entity by $values (key=>value)
+	 *
+	 * @param array $values
+	 * @param array $order Order => column=>ASC/DESC
+	 *
+	 * @return TaskHistory
+	 */
+	public function findOneBy(array $values, $order = null)
 	{
 		$items = $this->findBy($values, $order, 1);
-		if (count($items)>0) {
+		if (count($items) > 0) {
 			return $items[0];
 		} else {
-			return NULL;
+			return null;
 		}
 	}
 
 	/**
-	* Get view object
-	* @return \Nette\Database\Table\Selection
-	*/
-	protected function getTable()
-	{
-		$table = $this->database->table("TaskHistory");
-		return $table;
-	}
-
-	/**
-	 * Item data to array
+	 * Delete item
 	 *
-	 * @param TaskHistory $item
-	 * @return array
+	 * @param integer $id
+	 *
+	 * @return boolean
 	 */
-	private function itemToData(TaskHistory $item)
+	public function delete($id)
 	{
-		$data = array();
+		$deletedRow = 0;
+		if (($item = $this->find($id))) {
 
-		foreach ($this->mapItemPropertySQLNames() as $property => $columnSql) {
-			$data[$columnSql] = $item->$property;
+			$deletedRow = $this->getTable()
+				->where("TaskHistoryID", $id)
+				->delete();
+
+			$this->logDelete(__CLASS__, $item, "DEELETE WHERE TaskHistoryID=" . $id . " (cnt: $deletedRow)");
 		}
-
-		return $data;
+		return $deletedRow > 0;
 	}
 
 	/**
 	 * from data to item
 	 *
 	 * @param \Nette\Database\IRow $data
+	 *
 	 * @return TaskHistory
 	 */
 	protected function dataToItem($data)
@@ -155,23 +186,5 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 		}
 
 		return $item;
-	}
-
-
-	/**
-	 * Get array map of item property vs SQL columns name for TaskHistory table
-	 * @return array
-	 */
-	protected function mapItemPropertySQLNames()
-	{
-		return array (
-			"id"			=> "TaskHistoryID",
-			"taskId"		=> "TaskID",
-			"started"		=> "Started",
-			"finished"		=> "Finished",
-			"resultCode"	=> "ResultCode",
-			"user"			=> "User",
-			"output"		=> "Output",
-		);
 	}
 }

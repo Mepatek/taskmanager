@@ -2,6 +2,7 @@
 
 namespace Test;
 
+use Mepatek\TaskManager\Entity\Output;
 use Nette,
 	Tester,
 	Tester\Assert;
@@ -128,7 +129,9 @@ class EntityTest extends Tester\TestCase
 		$taskHistory->finished = $this->datetime;
 		$taskHistory->resultCode = 0;
 		$taskHistory->user = $this->varchar150;
-		$taskHistory->output = $this->text;
+		$output = new Output();
+		$output->write($this->text);
+		$taskHistory->output = $output;
 
 		// tests ...
 		Assert::same(8, $taskHistory->id);
@@ -137,7 +140,7 @@ class EntityTest extends Tester\TestCase
 		Assert::equal($this->datetime, $taskHistory->finished);
 		Assert::same(0, $taskHistory->resultCode);
 		Assert::same($this->varchar150, $taskHistory->user);
-		Assert::same($this->text, $taskHistory->output);
+		Assert::same($output, $taskHistory->output);
 	}
 }
 

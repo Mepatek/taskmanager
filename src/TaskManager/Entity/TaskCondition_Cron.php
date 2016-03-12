@@ -5,6 +5,10 @@ namespace Mepatek\TaskManager\Entity;
 use Nette\Utils\DateTime,
 	Cron;
 
+/**
+ * Class TaskCondition_Cron
+ * @package Mepatek\TaskManager\Entity
+ */
 class TaskCondition_Cron extends TaskCondition
 {
 
@@ -42,9 +46,9 @@ class TaskCondition_Cron extends TaskCondition
 	public function getData()
 	{
 		$data = json_encode(
-			array (
+			[
 				"CronExpression" => $this->cronExpression,
-			)
+			]
 		);
 		return $data;
 	}
@@ -54,7 +58,7 @@ class TaskCondition_Cron extends TaskCondition
 	 */
 	public function setData($data)
 	{
-		$decodedData = json_decode( $data );
+		$decodedData = json_decode($data);
 
 		if ($decodedData) {
 			$this->cronExpression = $decodedData->CronExpression;
@@ -65,13 +69,15 @@ class TaskCondition_Cron extends TaskCondition
 
 	/**
 	 * Get next run time
+	 *
 	 * @param DateTime $lastRun
+	 *
 	 * @return DateTime;
 	 */
 	public function getNextRunTime(DateTime $lastRun)
 	{
-		$cron = Cron\CronExpression::factory( $this->cronExpression );
+		$cron = Cron\CronExpression::factory($this->cronExpression);
 		$nextRun = new DateTime;
-		return $nextRun->from( $cron->getNextRunDate($lastRun) );
+		return $nextRun->from($cron->getNextRunDate($lastRun));
 	}
 }

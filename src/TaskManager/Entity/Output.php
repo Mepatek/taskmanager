@@ -2,6 +2,7 @@
 
 namespace Mepatek\TaskManager\Entity;
 
+use Mepatek\Entity\AbstractEntity;
 
 /**
  * Class Output
@@ -31,15 +32,6 @@ class Output extends AbstractEntity
 	}
 
 	/**
-	 * Add to output text
-	 * @param string $text
-	 */
-	public function write($text)
-	{
-		$this->output .= (string)$text . "\n";
-	}
-
-	/**
 	 * @return string
 	 */
 	public function getError()
@@ -57,12 +49,23 @@ class Output extends AbstractEntity
 
 	/**
 	 * Add to error text
+	 *
 	 * @param string $text
 	 */
 	public function error($text)
 	{
-		$this->write ("ERROR:" . (string)$text);
+		$this->write("ERROR:" . (string)$text);
 		$this->error .= (string)$text . "\n";
+	}
+
+	/**
+	 * Add to output text
+	 *
+	 * @param string $text
+	 */
+	public function write($text)
+	{
+		$this->output .= (string)$text . "\n";
 	}
 
 	/**

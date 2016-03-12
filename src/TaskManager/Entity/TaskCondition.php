@@ -1,7 +1,8 @@
 <?php
 
-
 namespace Mepatek\TaskManager\Entity;
+
+use Mepatek\Entity\AbstractEntity;
 
 
 /**
@@ -35,7 +36,7 @@ abstract class TaskCondition extends AbstractEntity implements ITaskCondition
 	public function setId($id)
 	{
 		// ONLY if id is not set
-		if ( ! $this->id ) {
+		if (!$this->id) {
 			$this->id = (int)$id;
 		}
 	}
@@ -78,7 +79,7 @@ abstract class TaskCondition extends AbstractEntity implements ITaskCondition
 	 */
 	public function getActive()
 	{
-		return $this->active ? TRUE : FALSE;
+		return $this->active ? true : false;
 	}
 
 	/**
@@ -86,7 +87,7 @@ abstract class TaskCondition extends AbstractEntity implements ITaskCondition
 	 */
 	public function setActive($active)
 	{
-		$this->active = $active ? TRUE : FALSE;
+		$this->active = $active ? true : false;
 	}
 
 

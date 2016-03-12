@@ -172,7 +172,9 @@ class RepositoryAndMapperTest extends Tester\TestCase
 		$taskHistory->finished = $this->datetime;
 		$taskHistory->resultCode = 0;
 		$taskHistory->user = $this->varchar150;
-		$taskHistory->output = $this->text;
+		$output = new \Mepatek\TaskManager\Entity\Output();
+		$output->write($this->text);
+		$taskHistory->output = $output;
 
 		Assert::true( $repositoryHistory->save($taskHistory) );
 
@@ -188,7 +190,8 @@ class RepositoryAndMapperTest extends Tester\TestCase
 		$item1->finished = $this->datetime;
 		$item1->resultCode = 2;
 		$item1->user = "1";
-		$item1->output = "1";
+		$output->output = "1";
+		$item1->output = $output->output;
 		Assert::true($repositoryHistory->save($item1));
 
 		// find

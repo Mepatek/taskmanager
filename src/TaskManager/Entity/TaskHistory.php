@@ -5,6 +5,8 @@ namespace Mepatek\TaskManager\Entity;
 
 use Nette\Utils\DateTime;
 
+use Mepatek\Entity\AbstractEntity;
+
 /**
  * Class TaskHistory
  * @package Mepatek\TaskManager\Entity
@@ -13,7 +15,7 @@ class TaskHistory extends AbstractEntity
 {
 
 	/** @var integer */
-	protected $id = NULL;
+	protected $id = null;
 	/** @var integer */
 	protected $taskId;
 	/** @var \Nette\Utils\DateTime */
@@ -75,7 +77,7 @@ class TaskHistory extends AbstractEntity
 	 */
 	public function setStarted($started)
 	{
-		$this->started = $this->DateTime( $started );
+		$this->started = $this->DateTime($started);
 	}
 
 	/**
@@ -91,7 +93,7 @@ class TaskHistory extends AbstractEntity
 	 */
 	public function setFinished($finished)
 	{
-		$this->finished = $this->DateTime( $finished );
+		$this->finished = $this->DateTime($finished);
 	}
 
 	/**
@@ -123,7 +125,7 @@ class TaskHistory extends AbstractEntity
 	 */
 	public function setUser($user)
 	{
-		$this->user = $this->StringTruncate( $user, 150 );
+		$this->user = $this->StringTruncate($user, 150);
 	}
 
 	/**
@@ -143,9 +145,7 @@ class TaskHistory extends AbstractEntity
 			$this->output = $output;
 		} else {
 			$this->output = new Output();
-			$this->output->write(
-				(string)$output
-			);
+			$this->output->output = $output;
 		}
 	}
 

@@ -2,10 +2,16 @@
 
 namespace Mepatek\TaskManager\Repository;
 
-use Mepatek\TaskManager\Mapper\IMapper,
-	Mepatek\TaskManager\Entity\TaskHistory,
+use Mepatek\Mapper\IMapper,
+	Mepatek\Repository\AbstractRepository;
+
+use Mepatek\TaskManager\Entity\TaskHistory,
 	Mepatek\TaskManager\Entity\Task;
 
+/**
+ * Class TaskHistoryRepository
+ * @package Mepatek\TaskManager\Repository
+ */
 class TaskHistoryRepository extends AbstractRepository
 {
 
@@ -21,7 +27,9 @@ class TaskHistoryRepository extends AbstractRepository
 
 	/**
 	 * Save
+	 *
 	 * @param TaskHistory $item
+	 *
 	 * @return boolean
 	 */
 	public function save(TaskHistory &$item)
@@ -34,6 +42,7 @@ class TaskHistoryRepository extends AbstractRepository
 	 * Delete task history
 	 *
 	 * @param integer $id
+	 *
 	 * @return boolean
 	 */
 	public function delete($id)
@@ -45,6 +54,7 @@ class TaskHistoryRepository extends AbstractRepository
 	 * Find by id
 	 *
 	 * @param integer $id
+	 *
 	 * @return TaskHistory
 	 */
 	public function find($id)
@@ -54,57 +64,63 @@ class TaskHistoryRepository extends AbstractRepository
 
 	/**
 	 * Find first item by $values (key=>value)
+	 *
 	 * @param array $values
 	 * @param array $order Order => column=>ASC/DESC
+	 *
 	 * @return TaskHistory
 	 */
-	public function findOneBy(array $values, $order=null)
+	public function findOneBy(array $values, $order = null)
 	{
 		return $this->mapper->findOneBy($values, $order);
 	}
 
-
-	/**
-	 * Find history for taskId
-	 * @param $taskId
-	 * @return TaskHistory[]
-	 */
-	public function findByTaskId( $taskId )
-	{
-		$values = array(
-			"taskId" => $taskId,
-		);
-		$order = array(
-			"started" => "DESC",
-		);
-		return $this->mapper->findBy( $values, $order );
-	}
-
-	/**
-	 * Fill task with history array
-	 * @return \Mepatek\TaskManager\Entity\TaskHistory[]
-	 */
-	public function fillTask( Task $task )
-	{
-		return ( $task->history = $this->findByTaskId( $task->id ) );
-	}
-
 	/**
 	 * Fill array of task with history array
+	 *
 	 * @param Task[] $tasks
+	 *
 	 * @return bool
 	 */
-	public function fillTasks( array $tasks )
+	public function fillTasks(array $tasks)
 	{
 		$success = true;
-		foreach ( $tasks as $task ) {
-			$success = $this->fillTask( $task )
-				and $success;
+		foreach ($tasks as $task) {
+			$success = $this->fillTask($task)
+			and $success;
 		}
 		return $success;
 	}
 
+	/**
+	 * Fill task with history array
+	 *
+	 * @param Task $task
+	 *
+	 * @return \Mepatek\TaskManager\Entity\TaskHistory[]
+	 */
+	public function fillTask(Task $task)
+	{
+		return ($task->history = $this->findByTaskId($task->id));
+	}
 
+	/**
+	 * Find history for taskId
+	 *
+	 * @param $taskId
+	 *
+	 * @return TaskHistory[]
+	 */
+	public function findByTaskId($taskId)
+	{
+		$values = [
+			"taskId" => $taskId,
+		];
+		$order = [
+			"started" => "DESC",
+		];
+		return $this->mapper->findBy($values, $order);
+	}
 
 
 }

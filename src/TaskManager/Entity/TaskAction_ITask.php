@@ -4,13 +4,14 @@
 namespace Mepatek\TaskManager\Entity;
 
 
+use Mepatek\TaskManager\ITask;
+
 /*
  * Data JSON:
  * ClassName (without namespace)
  * Namespace
  * Arguments[]
  */
-use Nette\Neon\Exception;
 
 /**
  * Class TaskAction_ITask
@@ -127,8 +128,6 @@ class TaskAction_ITask extends TaskAction
 	 */
 	public function run($container, $tasksDir, Output $output)
 	{
-		$success = false;
-
 		$fileTask = $tasksDir . DIRECTORY_SEPARATOR . $this->className . ".php";
 		$class = $this->nameSpace . "\\" . $this->className;
 
@@ -136,7 +135,7 @@ class TaskAction_ITask extends TaskAction
 			require_once($fileTask);
 
 			$itask = new $class($container, $output, $this->arguments);
-			if (!$itask instanceof \Mepatek\TaskManager\ITask) {
+			if (!$itask instanceof ITask) {
 				// TODO: exception
 				throw new \Exception('Třída "' . $class . '" nemá implementováno ITask');
 			} else {
@@ -146,9 +145,7 @@ class TaskAction_ITask extends TaskAction
 		} else {
 			// TODO: exceptions
 			throw new \Exception('Neexistuje soubor "' . $fileTask . '" s třídou "' . $class . '"');
-			$success = false;
 		}
-
 
 		return $success;
 

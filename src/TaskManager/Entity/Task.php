@@ -3,6 +3,7 @@
 
 namespace Mepatek\TaskManager\Entity;
 
+use Mepatek\Entity\AbstractEntity;
 use Nette\Utils\DateTime;
 use Exception;
 

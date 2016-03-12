@@ -1,8 +1,8 @@
 <?php
 
-
 namespace Mepatek\TaskManager\Entity;
 
+use Mepatek\Entity\AbstractEntity;
 
 /**
  * Class TaskAction
@@ -12,7 +12,7 @@ abstract class TaskAction extends AbstractEntity implements ITaskAction
 {
 
 	/** @var integer */
-	protected $id = NULL;
+	protected $id = null;
 	/** @var integer */
 	protected $order;
 
@@ -30,7 +30,7 @@ abstract class TaskAction extends AbstractEntity implements ITaskAction
 	public function setId($id)
 	{
 		// ONLY if id is not set
-		if ( ! $this->id ) {
+		if (!$this->id) {
 			$this->id = (int)$id;
 		}
 	}

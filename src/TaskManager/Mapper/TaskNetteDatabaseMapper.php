@@ -2,12 +2,14 @@
 
 namespace Mepatek\TaskManager\Mapper;
 
+use Mepatek\Mapper\IMapper;
+use Mepatek\Mapper\AbstractNetteDatabaseMapper;
+use Mepatek\Logger;
+
 use Nette,
 	Nette\Database\Context,
 	Mepatek\TaskManager\Entity,
-	Mepatek\TaskManager\Entity\Task,
-	Mepatek\TaskManager\Entity\TaskAction,
-	Mepatek\TaskManager\Entity\TaskCondition;
+	Mepatek\TaskManager\Entity\Task;
 
 
 /**
@@ -24,10 +26,11 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 
 	/**
 	 * TaskNetteDatabaseMapper constructor.
-	 * @param Context $database
+	 *
+	 * @param Context     $database
 	 * @param Logger|null $logger
 	 */
-	public function __construct(Context $database, Logger $logger=null)
+	public function __construct(Context $database, Logger $logger = null)
 	{
 		$this->database = $database;
 		$this->logger = $logger;
@@ -35,7 +38,9 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 
 	/**
 	 * Save item
+	 *
 	 * @param Task $item
+	 *
 	 * @return boolean
 	 */
 	public function save(&$item)
@@ -43,7 +48,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 		$data = $this->itemToData($item);
 		$retSave = false;
 
-		if (! $item->id) { // new --> insert
+		if (!$item->id) { // new --> insert
 
 			unset($data["TaskID"]);
 			$data["Created"] = new Nette\Utils\DateTime();
@@ -70,7 +75,7 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 		}
 
 
-		if ( $retSave ) {
+		if ($retSave) {
 			$this->saveActions($item);
 			$this->saveConditions($item);
 
@@ -80,8 +85,198 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	}
 
 	/**
+	 * Item data to array
+	 *
+	 * @param Task $item
+	 *
+	 * @return array
+	 */
+	private function itemToData(Task $item)
+	{
+		$data = [];
+
+		foreach ($this->mapItemPropertySQLNames() as $property => $columnSql) {
+			$data[$columnSql] = $item->$property;
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get array map of item property vs SQL columns name for Tasks table
+	 * @return array
+	 */
+	protected function mapItemPropertySQLNames()
+	{
+		return [
+			"id"             => "TaskID",
+			"name"           => "Name",
+			"created"        => "Created",
+			"source"         => "Source",
+			"author"         => "Author",
+			"description"    => "Description",
+			"deleteAfterRun" => "DeleteAfterRun",
+			"state"          => "State",
+			"disabled"       => "Disabled",
+			"nextRun"        => "NextRun",
+			"lastRun"        => "LastRun",
+			"lastSuccess"    => "LastSuccess",
+		];
+	}
+
+	/**
+	 * Get view object
+	 * @return \Nette\Database\Table\Selection
+	 */
+	protected function getTable()
+	{
+		$table = $this->database->table("Tasks");
+		if (!$this->deleted) {
+			$table->where("Deleted", false);
+		}
+		return $table;
+	}
+
+	/**
+	 * Find 1 entity by ID
+	 *
+	 * @param string $id
+	 *
+	 * @return Task
+	 */
+	public function find($id)
+	{
+		$values["id"] = $id;
+		$deleted = $this->deleted;
+		$this->deleted = true;
+
+		$item = $this->findOneBy($values);
+
+		$this->deleted = $deleted;
+		return $item;
+	}
+
+	/**
+	 * Find first entity by $values (key=>value)
+	 *
+	 * @param array $values
+	 * @param array $order Order => column=>ASC/DESC
+	 *
+	 * @return Task
+	 */
+	public function findOneBy(array $values, $order = null)
+	{
+		$items = $this->findBy($values, $order, 1);
+		if (count($items) > 0) {
+			return $items[0];
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Save actions from item
+	 *
+	 * @param Task $ite
+	 */
+	public function saveActions($item)
+	{
+		$ids = [];
+
+		foreach ($item->actions as $action) {
+			$exists = $this->database
+					->table("TaskActions")
+					->where("TaskActionID", $action->id)
+					->count() > 0;
+
+			$data = [
+				"TaskID" => $item->id,
+				"Type"   => $action->type,
+				"Data"   => $action->data,
+				"Order"  => $action->order,
+			];
+
+			if ($exists) {
+				$this->database
+					->table("TaskActions")
+					->where("TaskActionID", $action->id)
+					->update($data);
+			} else {
+				$row = $this->database
+					->table("TaskActions")
+					->insert($data);
+				$action->id = $row["TaskActionID"];
+			}
+			$ids[] = $action->id;
+		}
+
+		// delete not exist actions
+		$delTable = $this->database
+			->table("TaskActions")
+			->where("TaskID", $item->id);
+
+		if (count($ids) > 0) {
+			$delTable->where("TaskActionID NOT IN (?)", $ids);
+		}
+
+		$delTable->delete();
+	}
+
+	/**
+	 * Save conditions from item
+	 *
+	 * @param Task $item
+	 */
+	public function saveConditions($item)
+	{
+		$ids = [];
+
+		foreach ($item->conditions as $condition) {
+			$exists = $this->database
+					->table("TaskConditions")
+					->where("TaskConditionID", $condition->id)
+					->count() > 0;
+
+			$data = [
+				"TaskID"  => $item->id,
+				"Type"    => $condition->type,
+				"Data"    => $condition->data,
+				"Created" => $condition->created,
+				"Expired" => $condition->expired,
+				"Active"  => $condition->active,
+			];
+
+			if ($exists) {
+				$this->database
+					->table("TaskConditions")
+					->where("TaskConditionID", $condition->id)
+					->update($data);
+			} else {
+				$row = $this->database
+					->table("TaskConditions")
+					->insert($data);
+				$condition->id = $row["TaskConditionID"];
+			}
+			$ids[] = $condition->id;
+		}
+
+		// delete not exist actions
+		$delTable = $this->database
+			->table("TaskConditions")
+			->where("TaskID", $item->id);
+
+		if (count($ids) > 0) {
+			$delTable->where("TaskConditionID NOT IN (?)", $ids);
+		}
+
+		$delTable->delete();
+	}
+
+	/**
 	 * Delete item
+	 *
 	 * @param integer $id
+	 *
 	 * @return boolean
 	 */
 	public function delete($id)
@@ -95,9 +290,9 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			$deletedRow = $this->getTable()
 				->where("TaskID", $id)
 				->update(
-					array(
-						"Deleted" => TRUE,
-					)
+					[
+						"Deleted" => true,
+					]
 				);
 
 			$this->deleted = $deleted;
@@ -109,12 +304,15 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 
 	/**
 	 * Permanently delete item
+	 *
 	 * @param integer $id
+	 *
 	 * @return boolean
 	 */
 	public function deletePermanently($id)
 	{
 		$deletedRow = 0;
+
 		if (($item = $this->find($id))) {
 
 			$deleted = $this->deleted;
@@ -132,40 +330,6 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	}
 
 	/**
-	 * Find 1 entity by ID
-	 *
-	 * @param string $id
-	 * @return Task
-	 */
-	public function find($id)
-	{
-		$values["id"] = $id;
-		$deleted = $this->deleted;
-		$this->deleted = true;
-
-		$item = $this->findOneBy($values);
-
-		$this->deleted = $deleted;
-		return $item;
-	}
-
-	/**
-	* Find first entity by $values (key=>value)
-	* @param array $values
-	* @param array $order Order => column=>ASC/DESC
-	* @return Task
-	*/
-	public function findOneBy(array $values, $order=null)
-	{
-		$items = $this->findBy($values, $order, 1);
-		if (count($items)>0) {
-			return $items[0];
-		} else {
-			return NULL;
-		}
-	}
-
-	/**
 	 * Find all task to run now
 	 * Where:
 	 * NextRun = NULL OR NextRun<=NOW()
@@ -177,21 +341,22 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	{
 		$now = new \Nette\Database\SqlLiteral("CURRENT_TIMESTAMP");
 		return $this->findBy(
-			array(
+			[
 				"(NextRun IS NULL OR NextRun<=?)" => $now,
-				"disabled" => false,
-				"state" => 0,
-			)
+				"disabled"                        => false,
+				"state"                           => 0,
+			]
 		);
 	}
 
-
 	/**
 	 * Lock table for read only and set task state to running (State = 1)
+	 *
 	 * @param Task $task
+	 *
 	 * @return bool
 	 */
-	public function setStateRunning( Task $task )
+	public function setStateRunning(Task $task)
 	{
 		$table = $this->getTable();
 
@@ -199,12 +364,12 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			->where("TaskID", $task->id)
 			->where("State", $task->state)
 			->update(
-				array(
-					"State"	=> 1,
-				)
+				[
+					"State" => 1,
+				]
 			);
 
-		if ( $cnt > 0 ) {
+		if ($cnt > 0) {
 			$task->state = 1;
 		}
 
@@ -212,39 +377,10 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	}
 
 	/**
-	* Get view object
-	* @return \Nette\Database\Table\Selection
-	*/
-	protected function getTable()
-	{
-		$table = $this->database->table("Tasks");
-		if ( ! $this->deleted ) {
-			$table->where("Deleted",FALSE);
-		}
-		return $table;
-	}
-
-	/**
-	 * Item data to array
-	 *
-	 * @param Task $item
-	 * @return array
-	 */
-	private function itemToData(Task $item)
-	{
-		$data = array();
-
-		foreach ($this->mapItemPropertySQLNames() as $property => $columnSql) {
-			$data[$columnSql] = $item->$property;
-		}
-
-		return $data;
-	}
-
-	/**
 	 * from data to item
 	 *
 	 * @param \Nette\Database\IRow $data
+	 *
 	 * @return Task
 	 */
 	protected function dataToItem($data)
@@ -259,7 +395,6 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 		$this->loadConditions($item);
 		return $item;
 	}
-
 
 	/**
 	 * load actions to item
@@ -286,54 +421,6 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	}
 
 	/**
-	 * Save actions from item
-	 *
-	 * @param Task $ite
-	 */
-	public function saveActions($item)
-	{
-		$ids = array();
-
-		foreach ($item->actions as $action) {
-			$exists = $this->database
-				->table("TaskActions")
-				->where("TaskActionID", $action->id)
-				->count() > 0;
-
-			$data = array(
-				"TaskID"	=> $item->id,
-				"Type"		=> $action->type,
-				"Data"		=> $action->data,
-				"Order"		=> $action->order,
-			);
-
-			if ($exists) {
-				$this->database
-					->table("TaskActions")
-					->where("TaskActionID", $action->id)
-					->update($data);
-			} else {
-				$row = $this->database
-					->table("TaskActions")
-					->insert($data);
-				$action->id = $row["TaskActionID"];
-			}
-			$ids[] = $action->id;
-		}
-
-		// delete not exist actions
-		$delTable = $this->database
-			->table("TaskActions")
-			->where("TaskID", $item->id);
-
-		if ( count($ids) > 0 ) {
-			$delTable->where("TaskActionID NOT IN (?)", $ids);
-		}
-
-		$delTable->delete();
-	}
-
-	/**
 	 * load conditions to item
 	 *
 	 * @param Task $item
@@ -357,77 +444,5 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			$item->addCondition($condition);
 
 		}
-	}
-
-	/**
-	 * Save conditions from item
-	 *
-	 * @param Task $item
-	 */
-	public function saveConditions($item)
-	{
-		$ids = array();
-
-		foreach ($item->conditions as $condition) {
-			$exists = $this->database
-					->table("TaskConditions")
-					->where("TaskConditionID", $condition->id)
-					->count() > 0;
-
-			$data = array(
-				"TaskID"	=> $item->id,
-				"Type"		=> $condition->type,
-				"Data"		=> $condition->data,
-				"Created"	=> $condition->created,
-				"Expired"	=> $condition->expired,
-				"Active"	=> $condition->active,
-			);
-
-			if ($exists) {
-				$this->database
-					->table("TaskConditions")
-					->where("TaskConditionID", $condition->id)
-					->update($data);
-			} else {
-				$row = $this->database
-					->table("TaskConditions")
-					->insert($data);
-				$condition->id = $row["TaskConditionID"];
-			}
-			$ids[] = $condition->id;
-		}
-
-		// delete not exist actions
-		$delTable = $this->database
-			->table("TaskConditions")
-			->where("TaskID", $item->id);
-
-		if ( count($ids) > 0 ) {
-			$delTable->where("TaskConditionID NOT IN (?)", $ids);
-		}
-
-		$delTable->delete();
-	}
-
-	/**
-	 * Get array map of item property vs SQL columns name for Tasks table
-	 * @return array
-	 */
-	protected function mapItemPropertySQLNames()
-	{
-		return array (
-			"id"			=> "TaskID",
-			"name"			=> "Name",
-			"created"		=> "Created",
-			"source"		=> "Source",
-			"author"		=> "Author",
-			"description"	=> "Description",
-			"deleteAfterRun"=> "DeleteAfterRun",
-			"state"			=> "State",
-			"disabled"		=> "Disabled",
-			"nextRun"		=> "NextRun",
-			"lastRun"		=> "LastRun",
-			"lastSuccess"	=> "LastSuccess",
-		);
 	}
 }

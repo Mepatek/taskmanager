@@ -7,12 +7,24 @@ namespace Mepatek\TaskManager\Entity;
  */
 interface ITaskAction
 {
-	/** run task */
-	public function run( $container, $tasksDir, \Mepatek\TaskManager\Entity\Output $output );
+	/**
+	 * Run task
+	 *
+	 * @param \Nette\DI\Container $container
+	 * @param string              $tasksDir
+	 * @param string              $tasksDir
+	 * @param Output              $output
+	 *
+	 * @return bool
+	 */
+	public function run($container, $tasksDir, Output $output);
+
 	/** @return string */
 	public function getData();
+
 	/** @param string $data */
 	public function setData($data);
+
 	/** @return string */
 	public function getType();
 
