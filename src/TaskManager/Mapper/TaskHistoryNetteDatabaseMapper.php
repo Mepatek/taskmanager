@@ -18,9 +18,6 @@ use Nette,
  */
 class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMapper
 {
-	/** @var Nette\Database\Context */
-	private $database;
-
 	/**
 	 * TaskHistoryNetteDatabaseMapper constructor.
 	 *
