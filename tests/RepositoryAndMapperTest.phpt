@@ -84,7 +84,8 @@ class RepositoryAndMapperTest extends Tester\TestCase
 		$task->author= $this->varchar100;
 		$task->description = $this->text;
 		$task->deleteAfterRun = TRUE;
-		$task->state = 1;
+		$task->maxExecutionTimeInSecond = 88;
+		$task->state = 0;
 		$task->disabled = FALSE;
 		$task->nextRun = $this->datetime;
 		$task->lastRun = $this->datetime;
@@ -111,6 +112,12 @@ class RepositoryAndMapperTest extends Tester\TestCase
 
 		$item1 = $repository->find($itemId);
 		Assert::type("Mepatek\\TaskManager\\Entity\\Task", $item1);
+		Assert::equal($task, $item1);
+
+		$repository->setStateRunning($task);
+		$item1 = $repository->find($itemId);
+		Assert::type("Mepatek\\TaskManager\\Entity\\Task", $item1);
+		Assert::type("Nette\\Utils\\DateTime", $item1->exceedDateTime);
 		Assert::equal($task, $item1);
 
 		// update

@@ -107,18 +107,20 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	protected function mapItemPropertySQLNames()
 	{
 		return [
-			"id"             => "TaskID",
-			"name"           => "Name",
-			"created"        => "Created",
-			"source"         => "Source",
-			"author"         => "Author",
-			"description"    => "Description",
-			"deleteAfterRun" => "DeleteAfterRun",
-			"state"          => "State",
-			"disabled"       => "Disabled",
-			"nextRun"        => "NextRun",
-			"lastRun"        => "LastRun",
-			"lastSuccess"    => "LastSuccess",
+			"id"                       => "TaskID",
+			"name"                     => "Name",
+			"created"                  => "Created",
+			"source"                   => "Source",
+			"author"                   => "Author",
+			"description"              => "Description",
+			"deleteAfterRun"           => "DeleteAfterRun",
+			"maxExecutionTimeInSecond" => "MaxExecutionTimeInSecond",
+			"state"                    => "State",
+			"exceedDateTime"           => "ExceedDateTime",
+			"disabled"                 => "Disabled",
+			"nextRun"                  => "NextRun",
+			"lastRun"                  => "LastRun",
+			"lastSuccess"              => "LastSuccess",
 		];
 	}
 
@@ -358,12 +360,20 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 	{
 		$table = $this->getTable();
 
+		if ($task->maxExecutionTimeInSecond) {
+			$exceedDateTime = new Nette\Utils\DateTime();
+			$task->exceedDateTime = $exceedDateTime->add(
+				new \DateInterval("PT" . $task->maxExecutionTimeInSecond . "S")
+			);
+		}
+
 		$cnt = $table
 			->where("TaskID", $task->id)
 			->where("State", $task->state)
 			->update(
 				[
-					"State" => 1,
+					"State"          => 1,
+					"ExceedDateTime" => $task->exceedDateTime,
 				]
 			);
 

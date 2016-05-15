@@ -57,7 +57,9 @@ class EntityTest extends Tester\TestCase
 		$task->author= $this->varchar100;
 		$task->description = $this->text;
 		$task->deleteAfterRun = TRUE;
+		$task->maxExecutionTimeInSecond = 99;
 		$task->state = 1;
+		$task->exceedDateTime = $this->datetime;
 		$task->disabled = TRUE;
 		$task->nextRun = $this->datetime;
 		$task->lastRun = $this->datetime;
@@ -71,7 +73,9 @@ class EntityTest extends Tester\TestCase
 		Assert::same($this->varchar100, $task->author);
 		Assert::same($this->text, $task->description);
 		Assert::true($task->deleteAfterRun);
+		Assert::same(99, $task->maxExecutionTimeInSecond);
 		Assert::same(1, $task->state);
+		Assert::equal($this->datetime, $task->exceedDateTime);
 		Assert::true($task->disabled);
 		Assert::equal($this->datetime, $task->nextRun);
 		Assert::equal($this->datetime, $task->lastRun);

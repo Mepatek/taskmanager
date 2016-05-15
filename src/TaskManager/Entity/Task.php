@@ -28,6 +28,10 @@ class Task extends AbstractEntity
 	protected $description;
 	/** @var boolean */
 	protected $deleteAfterRun = false;
+	/** @var int */
+	protected $maxExecutionTimeInSecond;
+	/** @var datetime */
+	protected $exceedDateTime;
 	/** @var integer */
 	protected $state = 0;
 	/** @var boolean */
@@ -171,6 +175,39 @@ class Task extends AbstractEntity
 	{
 		$this->deleteAfterRun = $deleteAfterRun ? true : false;
 	}
+
+	/**
+	 * @return int
+	 */
+	public function getMaxExecutionTimeInSecond()
+	{
+		return $this->maxExecutionTimeInSecond;
+	}
+
+	/**
+	 * @param int $maxExecutionTimeInSecond
+	 */
+	public function setMaxExecutionTimeInSecond($maxExecutionTimeInSecond)
+	{
+		$this->maxExecutionTimeInSecond = $maxExecutionTimeInSecond;
+	}
+
+	/**
+	 * @return DateTime
+	 */
+	public function getExceedDateTime()
+	{
+		return $this->exceedDateTime;
+	}
+
+	/**
+	 * @param DateTime $exceedDateTime
+	 */
+	public function setExceedDateTime($exceedDateTime)
+	{
+		$this->exceedDateTime = $this->DateTime($exceedDateTime);
+	}
+
 
 	/**
 	 * @return int

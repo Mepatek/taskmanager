@@ -57,6 +57,9 @@ class TaskLauncher
 		// set time limit 4 hour
 		set_time_limit(4 * 60 * 60);
 
+		// clean
+		$this->killExceededTasks();
+
 		$success = true;
 
 		// find all the tasks to be run
@@ -93,12 +96,48 @@ class TaskLauncher
 			$this->taskHistoryRepository->save( $taskHistory );
 
 			// set state idle
-			$task->setLastAndNextRun( );
-			$task->state = 0;
-			$this->taskRepository->save( $task );
+			$this->setTaskIdleAndSave($task);
 		}
 		//var_dump($tasks);
 
 		return $success;
+	}
+
+	/**
+	 * Set state to 0 for task with expiration over MaxExecutionTimeInSecond
+	 * Set lastSuccess to false
+	 * Add info to history
+	 */
+	protected function killExceededTasks()
+	{
+		$exceededTasks = $this->taskRepository->findExceededTasks();
+		foreach ($exceededTasks as $task) {
+			$task->lastSuccess = false;
+			$this->setTaskIdleAndSave($task);
+			// task history ..
+			$taskHistory = new TaskHistory();
+			$taskHistory->taskId = $task->id;
+			$taskHistory->started = new DateTime();
+			$taskHistory->finished = new DateTime();
+			$taskHistory->output = new Output;
+			$taskHistory->output->error("Exceeded time to run");
+			$taskHistory->resultCode = -1;
+			$this->taskHistoryRepository->save( $taskHistory );
+		}
+	}
+
+	/**
+	 * Set state to idle
+	 * set last and next run
+	 *
+	 * @param Task $task
+	 */
+	protected function setTaskIdleAndSave(Task $task)
+	{
+		// set state idle
+		$task->setLastAndNextRun( );
+		$task->state = 0;
+		$this->taskRepository->save( $task );
+
 	}
 }

@@ -6,6 +6,7 @@ use Mepatek\Mapper\IMapper,
 	Mepatek\Repository\AbstractRepository;
 
 use Mepatek\TaskManager\Entity\Task;
+use Nette\Utils\DateTime;
 
 /**
  * Class TaskRepository
@@ -82,12 +83,23 @@ class TaskRepository extends AbstractRepository
 	 * Disabled = FALSE
 	 * Deleted = FALSE
 	 * State = 0
+	 * @return Task[]
 	 */
 	public function findTasksToRun()
 	{
 		return $this->mapper->findTasksToRun();
 	}
 
+	/**
+	 * Find all task over maximum execution time
+	 *
+	 * @return Task[]
+	 */
+	public function findExceededTasks()
+	{
+		$now = new DateTime();
+		return $this->mapper->findBy(["exceedDateTime <=" => $now]);
+	}
 
 	/**
 	 * Set task state to running (State = 1)
@@ -100,5 +112,7 @@ class TaskRepository extends AbstractRepository
 	{
 		return $this->mapper->setStateRunning($task);
 	}
+
+
 
 }
