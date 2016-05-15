@@ -29,8 +29,10 @@ CREATE TABLE 'Tasks'
 	'Author' TEXT,
 	'Description' TEXT,
 	'DeleteAfterRun' INTEGER NOT NULL DEFAULT 0,
-	'Disabled' INTEGER NOT NULL DEFAULT 0,
+	'MaxExecutionTimeInSecond' INTEGER, 
+  'Disabled' INTEGER NOT NULL DEFAULT 0,
 	'State' INTEGER NOT NULL DEFAULT 0, -- 0 = Idle 1 = Running 2 = Queued
+  'ExceedDateTime' TEXT,
 	'NextRun' TEXT,
 	'LastRun' TEXT,
 	'LastSuccess' INTEGER,
