@@ -136,6 +136,7 @@ class TaskLauncher
 	{
 		// set state idle
 		$task->setLastAndNextRun( );
+		$task->exceedDateTime = null;
 		$task->state = 0;
 		$this->taskRepository->save( $task );
 
