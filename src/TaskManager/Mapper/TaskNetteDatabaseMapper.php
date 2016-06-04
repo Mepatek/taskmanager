@@ -63,13 +63,11 @@ class TaskNetteDatabaseMapper extends AbstractNetteDatabaseMapper implements IMa
 			unset($data["TaskID"]);
 			unset($data["Created"]);
 
-			$row = $this->getTable()
+			$this->getTable()
 				->where("TaskID", $item->id)
 				->update($data);
-			if ($row) {
-				$this->logSave(__CLASS__, $item_old, $item);
-				$retSave = true;
-			}
+			$this->logSave(__CLASS__, $item_old, $item);
+			$retSave = true;
 		}
 
 
