@@ -32,26 +32,45 @@ class TaskLauncher
 
 	/**
 	 * TaskLauncher constructor.
+	 *
 	 * @param Context $database
-	 * @param string $container
-	 * @param string $tasksDir
+	 * @param string  $container
+	 * @param string  $tasksDir
 	 */
-	public function __construct( $database, $container, $tasksDir )
+	public function __construct($database, $container, $tasksDir)
 	{
 		$this->database = $database;
 		$this->container = $container;
 		$this->tasksDir = $tasksDir;
 
-		$taskMapper = new TaskNetteDatabaseMapper( $this->database );
-		$this->taskRepository = new TaskRepository( $taskMapper );
-		$taskHistoryMapper = new TaskHistoryNetteDatabaseMapper( $this->database );
-		$this->taskHistoryRepository = new TaskHistoryRepository( $taskHistoryMapper );
+		$taskMapper = new TaskNetteDatabaseMapper($this->database);
+		$this->taskRepository = new TaskRepository($taskMapper);
+		$taskHistoryMapper = new TaskHistoryNetteDatabaseMapper($this->database);
+		$this->taskHistoryRepository = new TaskHistoryRepository($taskHistoryMapper);
+	}
+
+	/**
+	 * Run task (taskName) withou planing from console
+	 *
+	 * @param $taskName
+	 *
+	 * @return bool
+	 */
+	public function consoleRun($taskName)
+	{
+		$task = $this->taskRepository->findOneBy(["name" => $taskName]);
+		if ($task) {
+			return $this->runTask($task);
+		} else {
+			return false;
+		}
+
 	}
 
 	/**
 	 * Run all tasks in plan
 	 */
-	public function run( )
+	public function run()
 	{
 
 		// set time limit 4 hour
@@ -66,40 +85,54 @@ class TaskLauncher
 		$tasks = $this->taskRepository->findTasksToRun();
 		foreach ($tasks as $task) {
 
-			// task history ..
-			$taskHistory = new TaskHistory();
-			$taskHistory->taskId = $task->id;
-			$taskHistory->started = new DateTime();
-			$taskHistory->output = new Output;
-			$this->taskHistoryRepository->save( $taskHistory );
+			$success = $this->runTask($task) and $success;
 
-			$resultCode = 0;
-
-			// if set state running run task
-			try {
-				$this->taskRepository->setStateRunning( $task );
-
-				$success = $task->run( $this->container, $this->tasksDir, $taskHistory->output )
-					and $success;
-
-			} catch (Exception $e) {
-				$resultCode = $e->getCode();
-				$taskHistory->output->error("(code: " . $e->getCode() . ") " . $e->getMessage() . "\n"
-						. "file '" . $e->getFile() . "' (line " . $e->getLine() . ")\n"
-						. $e->getTraceAsString() . "\n\n");
-				$success = false;
-			}
-
-
-			$taskHistory->finished = new DateTime();
-			$taskHistory->resultCode = $resultCode;
-			$this->taskHistoryRepository->save( $taskHistory );
-
-			// set state idle
-			$this->setTaskIdleAndSave($task);
 		}
-		//var_dump($tasks);
 
+		return $success;
+	}
+
+	/**
+	 * Run one task ...
+	 *
+	 * @param Task $task
+	 *
+	 * @return bool
+	 */
+	protected function runTask(Task $task)
+	{
+		// task history ..
+		$taskHistory = new TaskHistory();
+		$taskHistory->taskId = $task->id;
+		$taskHistory->started = new DateTime();
+		$taskHistory->output = new Output;
+		$this->taskHistoryRepository->save($taskHistory);
+
+		$resultCode = 0;
+
+		// if set state running run task
+		try {
+			$this->taskRepository->setStateRunning($task);
+
+			$success = $task->run($this->container, $this->tasksDir, $taskHistory->output);
+
+		} catch (Exception $e) {
+			$resultCode = $e->getCode();
+			$taskHistory->output->error(
+				"(code: " . $e->getCode() . ") " . $e->getMessage() . "\n"
+				. "file '" . $e->getFile() . "' (line " . $e->getLine() . ")\n"
+				. $e->getTraceAsString() . "\n\n"
+			);
+			$success = false;
+		}
+
+
+		$taskHistory->finished = new DateTime();
+		$taskHistory->resultCode = $resultCode;
+		$this->taskHistoryRepository->save($taskHistory);
+
+		// set state idle
+		$this->setTaskIdleAndSave($task);
 		return $success;
 	}
 
@@ -122,7 +155,7 @@ class TaskLauncher
 			$taskHistory->output = new Output;
 			$taskHistory->output->error("Exceeded time to run");
 			$taskHistory->resultCode = -1;
-			$this->taskHistoryRepository->save( $taskHistory );
+			$this->taskHistoryRepository->save($taskHistory);
 		}
 	}
 
@@ -135,10 +168,10 @@ class TaskLauncher
 	protected function setTaskIdleAndSave(Task $task)
 	{
 		// set state idle
-		$task->setLastAndNextRun( );
+		$task->setLastAndNextRun();
 		$task->exceedDateTime = null;
 		$task->state = 0;
-		$this->taskRepository->save( $task );
+		$this->taskRepository->save($task);
 
 	}
 }
