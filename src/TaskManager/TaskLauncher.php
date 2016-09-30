@@ -58,6 +58,9 @@ class TaskLauncher
 	 */
 	public function consoleRun($taskName)
 	{
+		// set time limit 4 hour
+		set_time_limit(4 * 60 * 60);
+
 		$task = $this->taskRepository->findOneBy(["name" => $taskName]);
 		if ($task) {
 			return $this->runTask($task);
