@@ -122,5 +122,27 @@ class TaskHistoryRepository extends AbstractRepository
 		return $this->mapper->findBy($values, $order);
 	}
 
+	/**
+	 * Delete all history record older than x days
+	 *
+	 * @param integer $maxDays
+	 *
+	 * @return integer count of deleted record
+	 */
+	public function deleteOlderThanDays($maxDays)
+	{
+		return $this->mapper->deleteOlderThanDays($maxDays);
+	}
 
+	/**
+	 * Delete all history record over x count
+	 *
+	 * @param integer $maxCount
+	 *
+	 * @return integer count of deleted record
+	 */
+	public function deleteOverCount($maxCount)
+	{
+		return $this->mapper->deleteOverCount($maxCount);
+	}
 }

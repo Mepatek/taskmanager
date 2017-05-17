@@ -168,6 +168,42 @@ class TaskHistoryNetteDatabaseMapper extends AbstractNetteDatabaseMapper impleme
 	}
 
 	/**
+	 * Delete all history record older than x days
+	 *
+	 * @param integer $maxDays
+	 *
+	 * @return integer count of deleted record
+	 */
+	public function deleteOlderThanDays($maxDays)
+	{
+		$values =
+			[
+				"started < DATE_SUB(CURDATE(),INTERVAL ? DAY)" => $maxDays,
+			];
+		$deleteCount = $this->selectionBy($values)
+			->delete();
+		return $deleteCount;
+	}
+
+	/**
+	 * Delete all history record over x count
+	 *
+	 * @param integer $maxCount
+	 *
+	 * @return integer count of deleted record
+	 */
+	public function deleteOverCount($maxCount)
+	{
+		$selection = $this->selectionBy([], ["id" => "DESC"], PHP_INT_MAX, $maxCount);
+		$values = [
+			"TaskHistoryID" => $selection,
+		];
+		$deleteCount = $this->selectionBy($values)
+			->delete();
+		return $deleteCount;
+	}
+
+	/**
 	 * from data to item
 	 *
 	 * @param \Nette\Database\IRow $data

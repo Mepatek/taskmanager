@@ -30,6 +30,12 @@ class TaskLauncher
 	/** @var TaskHistoryRepository */
 	private $taskHistoryRepository;
 
+
+	/** @var int maximum days for history */
+	private $maxHistoryDays = 30;
+	/** @var int maximum count of record for history */
+	private $maxHistoryRecords = 10000;
+
 	/**
 	 * TaskLauncher constructor.
 	 *
@@ -58,8 +64,8 @@ class TaskLauncher
 	 */
 	public function consoleRun($taskName)
 	{
-		// set time limit 4 hour
-		set_time_limit(4 * 60 * 60);
+		$this->setUpFromConfig();
+		$this->cleanUp();
 
 		$task = $this->taskRepository->findOneBy(["name" => $taskName]);
 		if ($task) {
@@ -67,7 +73,6 @@ class TaskLauncher
 		} else {
 			return false;
 		}
-
 	}
 
 	/**
@@ -76,11 +81,8 @@ class TaskLauncher
 	public function run()
 	{
 
-		// set time limit 4 hour
-		set_time_limit(4 * 60 * 60);
-
-		// clean
-		$this->killExceededTasks();
+		$this->setUpFromConfig();
+		$this->cleanUp();
 
 		$success = true;
 
@@ -93,6 +95,42 @@ class TaskLauncher
 		}
 
 		return $success;
+	}
+
+	/**
+	 * Run clean up tasks:
+	 * kill exceeded tasks
+	 * clear history
+	 */
+	protected function cleanUp()
+	{
+		// clean
+		$this->killExceededTasks();
+		$this->cleanHistory();
+	}
+
+	protected function setUpFromConfig()
+	{
+		// set default time limit 4 hour
+		$timeLimit = 4 * 60 * 60;
+
+		$parameters = $this->container->getParameters();
+		if (is_array($parameters) and array_key_exists("taskManager", $parameters)) {
+			/// ***** TIMELIMIT ****** //
+			if (isset($parameters["taskManager"]["timeLimit"])) {
+				$timeLimit = $parameters["taskManager"]["timeLimit"];
+			}
+			/// ***** MAX HISTORY DAYS ****** //
+			if (isset($parameters["taskManager"]["history"]["maxDays"])) {
+				$this->maxHistoryDays = (int)$parameters["taskManager"]["history"]["maxDays"];
+			}
+			/// ***** MAX HISTORY RECORDS ****** //
+			if (isset($parameters["taskManager"]["history"]["maxRecords"])) {
+				$this->maxHistoryRecords = (int)$parameters["taskManager"]["history"]["maxRecords"];
+			}
+		}
+
+		set_time_limit($timeLimit);
 	}
 
 	/**
@@ -160,6 +198,15 @@ class TaskLauncher
 			$taskHistory->resultCode = -1;
 			$this->taskHistoryRepository->save($taskHistory);
 		}
+	}
+
+	/**
+	 * clear all records older than x days and all over the max count
+	*/
+	protected function cleanHistory()
+	{
+		$this->taskHistoryRepository->deleteOlderThanDays($this->maxHistoryDays);
+		$this->taskHistoryRepository->deleteOverCount($this->maxHistoryRecords);
 	}
 
 	/**
